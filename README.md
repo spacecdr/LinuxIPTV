@@ -2,7 +2,7 @@
 
 **Liste M3U, canali e preferiti. La tua IPTV sul Mac, con il player già incluso.**
 
-[Scarica per Intel e Apple Silicon](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.2) · [Pagina del progetto](https://spacecdr.github.io/MacIPTV/) · [Comandi](#comandi) · [Compilazione e test](DEVELOPMENT.md)
+[Scarica per Intel e Apple Silicon](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.3) · [Pagina del progetto](https://spacecdr.github.io/MacIPTV/) · [Comandi](#comandi) · [Compilazione e test](DEVELOPMENT.md)
 
 ![Catalogo MacIPTV: gruppi, ricerca e canali in griglia](docs/assets/catalogo.png)
 
@@ -12,7 +12,7 @@ MacIPTV è un’applicazione standalone per macOS: carichi una lista M3U da file
 
 ## Download e installazione
 
-1. Scarica **MacIPTV-universal.zip** dalla [release](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.2).
+1. Scarica **MacIPTV-universal.zip** dalla [release](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.3).
 2. Estrai lo ZIP e trascina **MacIPTV.app** in **Applicazioni**.
 3. Apri l’app e usa **Gestisci lista M3U** per caricare un file o incollare un URL.
 
@@ -26,7 +26,7 @@ L’app ha una firma locale ad hoc e **non è notarizzata Apple**. Se macOS ne i
 | --- | --- |
 | Liste M3U | Importare file e URL HTTP/HTTPS, aggiornare le liste remote ed esportare la lista salvata |
 | Gruppi e ricerca | Cercare gruppi e canali, vedere i conteggi e consultare pagine da 60 canali |
-| Griglia o elenco | Cambiare vista; nell’elenco puoi selezionare e copiare il link del canale |
+| Griglia o elenco | Cambiare vista; nell’elenco trovi il programma EPG, gli orari e la progressione |
 | Preferiti | Aggiungere o rimuovere un canale con la stella; ritrovarlo ai prossimi avvii |
 | Player integrato | Riprodurre con LibVLC, regolare volume, pausa, muto e buffer da 1 a 10 secondi |
 | Menu sul video | Premere Invio per riaprire il catalogo semitrasparente, conservando filtri e selezione |
@@ -41,11 +41,11 @@ L’app ha una firma locale ad hoc e **non è notarizzata Apple**. Se macOS ne i
 
 La stella è separata dal pulsante di riproduzione. I preferiti vengono salvati sul Mac e possono essere filtrati con la ricerca.
 
-### Link visibili, elenco compatto
+### Programmi EPG, elenco compatto
 
 ![Vista elenco di MacIPTV](docs/assets/elenco.png)
 
-La vista elenco affianca nome, gruppo e URL. Gli indirizzi lunghi scorrono nella propria area senza allargare la finestra.
+La vista elenco affianca nome e gruppo al programma EPG, con orari e progressione, in righe compatte senza URL.
 
 ### Il catalogo resta sopra il video
 
@@ -61,7 +61,8 @@ Durante la riproduzione, **Invio** riapre lo stesso catalogo senza fermare il pl
 | --- | --- | --- |
 | ↑ ↓ ← → | Navigazione; → dai gruppi entra nei canali | ↑/↓ cambia canale; ←/→ regola il volume |
 | Invio | Attiva il controllo o riproduce il canale | Riapre il menu semitrasparente |
-| Esc / Backspace | Dai canali torna ai gruppi, poi al video | Riapre il catalogo |
+| Esc | Nell’OSD interrompe la riproduzione | Apre l’OSD |
+| Backspace | Dai canali torna ai gruppi, poi al video | Riapre il catalogo |
 | F | Schermo intero / finestra | Schermo intero / finestra |
 | B | Solo durante la riproduzione | Borderless / modalità precedente |
 | I | Info sul canale in riproduzione | Info con dissolvenza e chiusura dopo 5 secondi |
@@ -135,3 +136,12 @@ La playlist resta invariata. MacIPTV cerca prima l’ID esatto, poi confronta gl
 Gli abbinamenti automatici richiedono un unico canale della guida. Ambiguità e nomi discordanti non vengono risolti arbitrariamente. Numeri e +1/+24 restano distinti. Il pannello EPG distingue ID esatti, ID normalizzati, associazioni per nome, ambigui e mancanti. Le guide già in cache restano compatibili; nessuna nuova sorgente viene imposta.
 
 Build Universal Intel/Apple Silicon, macOS 13+, firma locale non notarizzata. Verificati abbinamenti, collisioni, timeshift, cache e feedback EPG con test mirati. Nessuna modifica al motore video.
+
+## 1.1.3 — Comandi e catalogo compatto
+
+- Clic singolo sul video: informazioni del canale. Trascinamento e ridimensionamento non attivano le info; doppio clic mantiene fullscreen/ritorno. Il clic singolo attende l’intervallo del doppio clic.
+- Esc dal video apre l’OSD, anche in borderless; Esc nell’OSD interrompe la riproduzione. Backspace conserva la navigazione precedente. B resta disponibile per uscire dal borderless.
+- Telecomando nascosto quando non è selezionato un canale in riproduzione.
+- Vista elenco compatta: nome/gruppo affiancati al programma EPG, orari e progressione. Rimossi gli URL dalle righe. Descrizioni dei programmi soltanto nelle info.
+
+Build Universal Intel/Apple Silicon, macOS 13+, firma locale non notarizzata.

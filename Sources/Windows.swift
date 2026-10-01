@@ -54,7 +54,7 @@ extension App {
         if borderReturnFullscreen { pendingBorderless = true; fullReturnFloating = false; window.toggleFullScreen(nil) }
         else { session.normal = NSStringFromRect(window.frame); enterFloating() }
     }
-    func escape() { if floating { toggleBorderless() } else if infoVisible { hideInfo() } else { showMenu() } }
+    func escape() { if current != nil && visible { stop() } else { showMenu() } }
     func restoreBorders() { if floating { leaveFloating() }; saveWindow() }
     func windowDidExitFullScreen(_ notification: Notification) {
         transitioning = false

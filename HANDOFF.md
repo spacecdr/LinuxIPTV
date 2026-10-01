@@ -13,3 +13,7 @@ La 1.1.0 è stata pubblicata dall’utente con lo script e l’utente conferma l
 ## 2 ottobre — associazione automatica EPG 1.1.2
 
 La 1.1.1 è stata pubblicata dopo il ripristino della rete. La 1.1.2 aggiunge EPGMatcher: ID esatto, ID normalizzato, nomi ripuliti; collisioni bloccate, +1/+24 e numeri preservati. Indice riutilizzato per l’invio del catalogo, compatibile con cache esistenti. Nessuna modifica delle playlist o della sorgente scelta dall’utente. Test Features e feedback EPG passati; catalogo browser su Chrome passato. Build Universal e firma verificate. Nessun test su Intel fisico o nuova verifica audio/video nativa. Release predisposta in release/v1.1.2, script scripts/publish-1.1.2.sh.
+
+## 2 ottobre — comandi e catalogo 1.1.3
+
+Clic singolo differito dall’intervallo doppio clic per le info; trascinamento con soglia 4 punti e performDrag sull’evento mouseDown originale, resize borderless preservato. Esc video → OSD → stop, Backspace invariato (azione back separata). Telecomando nascosto senza playback. Elenco compatto con EPG laterale senza URL. Screenshot dimostrativi rigenerati. Browser/feedback/sito passati, build Universal e firma verificate. Smoke nativo Apple Silicon con video sintetico: playback avanzante 640×360, fullscreen/borderless, azione info e due Esc verificati. Il test aziona il callback delle info, non simula fisicamente clic/drag/doppio clic. Nessun test Intel fisico. Release 1.1.3 predisposta con ZIP/checksum e script publish-1.1.3.sh; precedenti 1.1.1 e 1.1.2 pubblicate come prerelease.

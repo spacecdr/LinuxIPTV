@@ -16,15 +16,21 @@ assert.equal(await page.locator('.title').first().textContent(),'<img src=x oner
 await page.locator('.play').first().focus();await page.keyboard.press('ArrowRight');assert.equal(await page.evaluate(()=>document.activeElement.id),'play-1');
 await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>calls.at(-1).action),'play');
 await page.keyboard.press('p');assert.equal(await page.locator('#fav-1').textContent(),'★');
-await page.keyboard.press('Escape');assert.equal(await page.evaluate(()=>document.activeElement.dataset.group),'@all');
-await page.keyboard.press('Escape');assert.equal(await page.evaluate(()=>calls.at(-1).action),'hide');
+await page.keyboard.press('Backspace');assert.equal(await page.evaluate(()=>document.activeElement.dataset.group),'@all');
+await page.keyboard.press('Backspace');assert.equal(await page.evaluate(()=>calls.at(-1).action),'hide');
+await page.keyboard.press('Escape');assert.equal(await page.evaluate(()=>calls.at(-1).action),'escape');
+await page.evaluate(()=>receiveState({current:'',active:false,name:'',status:'Stop',volume:70,muted:false,floating:false}));assert.equal(await page.locator('#transport').isVisible(),false);
+await page.evaluate(()=>receiveState({current:'1',active:true,name:'Test',status:'Play',volume:70,muted:false,floating:false}));assert.equal(await page.locator('#transport').isVisible(),true);
 await page.locator('#groups button').first().click();assert.equal(await page.locator('.channel').count(),1);
 await page.locator('.play').first().focus();await page.keyboard.press('Backspace');assert.equal(await page.evaluate(()=>document.activeElement.dataset.group),'@fav');
 await page.locator('#groups button').nth(1).click();await page.locator('#search').fill('Canale 6400');assert.equal(await page.locator('.channel').count(),1);
 await page.keyboard.press('Backspace');assert.equal(await page.locator('#search').inputValue(),'Canale 640');
 await page.locator('#search').fill('');await page.locator('#next').click();assert.equal(await page.locator('.play').first().getAttribute('id'),'play-60');
 await page.locator('#listMode').click();assert.equal(await page.locator('#cards.list').count(),1);
-for(const width of [1280,800,640,420]){await page.setViewportSize({width,height:width===420?500:720});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`Overflow ${width}`)}
+await page.evaluate(()=>receiveEPG({programmes:Object.fromEntries(channels.map(c=>[c.id,{now:{title:'Programma dimostrativo con un titolo lungo',start:Date.now()/1000-600,end:Date.now()/1000+600}}])),diagnostics:{}}));
+assert.equal(await page.locator('.link').count(),0);assert.equal(await page.locator('#cards.list .channel>.guide-now progress').count(),60);
+assert.equal(await page.locator('#cards').textContent().then(t=>t.includes('https://example.org')),false);
+for(const width of [1280,800,640,420]){await page.setViewportSize({width,height:width===420?500:720});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`Overflow ${width}`);assert((await page.locator('.channel').first().boundingBox()).height<70,'Compact EPG row')}
 await page.setViewportSize({width:1280,height:800});await page.locator('#gridMode').click();await page.screenshot({path:path.join(__dirname,'catalog.png')});
 assert.deepEqual(errors,[]);console.log('PASS 6442 channels, pagination, groups, search, escaped metadata, keyboard navigation, favorites, playback bridge, backspace editing, grid/list, responsive sizes, no JS errors');
 }finally{await browser.close()}

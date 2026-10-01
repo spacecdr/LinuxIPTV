@@ -7,23 +7,38 @@ final class TVWindow: NSWindow {
     override var canBecomeMain: Bool { true }
 }
 final class VideoSurface: NSView {
+    var onSingleClick: (() -> Void)?
     var onDoubleClick: (() -> Void)?
+    private var pendingClick: DispatchWorkItem?
     override var acceptsFirstResponder: Bool { true }
     override func hitTest(_ point:NSPoint)->NSView? {bounds.contains(convert(point,from:superview)) ? self : nil}
     override func mouseDown(with event:NSEvent){
+        pendingClick?.cancel(); pendingClick = nil
         guard let window=window else{return}
         if event.clickCount==2 {onDoubleClick?();return}
-        guard !window.styleMask.contains(.fullScreen) else{return}
         let p=convert(event.locationInWindow,from:nil)
-        if !window.styleMask.contains(.titled) && p.x>bounds.width-28 && p.y<28 {
-            let frame=window.frame,origin=NSEvent.mouseLocation,ratio=window.contentAspectRatio
-            while let e=window.nextEvent(matching:[.leftMouseDragged,.leftMouseUp]){
-                if e.type == .leftMouseUp{break};let mouse=NSEvent.mouseLocation
+        let frame=window.frame,origin=NSEvent.mouseLocation,ratio=window.contentAspectRatio
+        let fullscreen=window.styleMask.contains(.fullScreen)
+        let resize = !fullscreen && !window.styleMask.contains(.titled) && p.x>bounds.width-28 && p.y<28
+        var dragged=false
+        while let e=window.nextEvent(matching:[.leftMouseDragged,.leftMouseUp]) {
+            if e.type == .leftMouseUp {
+                if !dragged {
+                    let click = DispatchWorkItem { [weak self] in self?.onSingleClick?() }
+                    pendingClick=click
+                    DispatchQueue.main.asyncAfter(deadline:.now()+NSEvent.doubleClickInterval,execute:click)
+                }
+                return
+            }
+            let mouse=NSEvent.mouseLocation
+            if hypot(mouse.x-origin.x,mouse.y-origin.y)>4 {dragged=true}
+            guard dragged, !fullscreen else {continue}
+            if resize {
                 var w=max(420,frame.width+mouse.x-origin.x),h=max(236,frame.height-mouse.y+origin.y)
                 if ratio.width>0 {let r=ratio.width/ratio.height;if abs(mouse.x-origin.x)>abs(mouse.y-origin.y)*r{h=max(236,w/r);w=h*r}else{w=max(420,h*r);h=w/r}}
                 window.setFrame(NSRect(x:frame.minX,y:frame.maxY-h,width:w,height:h),display:true)
-            }
-        }else{window.performDrag(with:event)}
+            } else {window.performDrag(with:event);return}
+        }
     }
 }
 final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMessageHandler, WKNavigationDelegate {
@@ -99,6 +114,9 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         root.autoresizingMask = [.width, .height]
         surface = VideoSurface(frame: root.bounds)
         surface.autoresizingMask = [.width, .height]
+        surface.onSingleClick = { [weak self] in
+            guard let self = self, self.current != nil, !self.visible else { return }; self.toggleInfo()
+        }
         surface.onDoubleClick = { [weak self] in self?.toggleFullscreen() }
         root.addSubview(surface)
         let config = WKWebViewConfiguration()
@@ -205,6 +223,7 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         case "refreshEPG": if let item=selectedPlaylist, !epg.busy.contains(item.id) {epg.refresh(item,force:true)}
         case "info": toggleInfo()
         case "escape": escape()
+        case "back": if floating { toggleBorderless() } else { showMenu() }
         case "open": openFile()
         case "import": importURL(body["url"] as? String ?? "")
         case "refresh": importURL(catalog?.source ?? "")
@@ -345,7 +364,13 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 14) {
             print("SMOKE fullscreenToFloating=\(self.floating && !self.window.styleMask.contains(.fullScreen))")
-            self.restoreBorders(); self.showMenu()
+            self.restoreBorders(); self.hideMenu()
+            self.surface.onSingleClick?()
+            print("SMOKE singleClickInfo=\(self.infoVisible)")
+            self.escape()
+            print("SMOKE firstEscapeOSD=\(self.visible && self.current != nil && !self.infoVisible)")
+            self.escape()
+            print("SMOKE secondEscapeStopped=\(self.current == nil && self.visible)")
             NSApp.terminate(nil)
         }
     }
