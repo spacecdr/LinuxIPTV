@@ -6,6 +6,7 @@
 /release/*
 !/release/notes-v1.0.0.md
 !/release/notes-v1.1.0.md
+!/release/notes-v1.1.1.md
 /Tests/*.ts
 /Tests/*.png
 /Tests/*.log

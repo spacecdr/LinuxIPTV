@@ -202,6 +202,7 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         case "savePlaylist": editPlaylist(body)
         case "removePlaylist": removePlaylist()
         case "browse": rememberBrowse(body)
+        case "refreshEPG": if let item=selectedPlaylist, !epg.busy.contains(item.id) {epg.refresh(item,force:true)}
         case "info": toggleInfo()
         case "escape": escape()
         case "open": openFile()

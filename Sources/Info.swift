@@ -30,10 +30,10 @@ extension App {
         var result:[String:Any]=[:];if let now=now {result["now"]=encode(now)};if let next=next{result["next"]=encode(next)};return result
     }
     func sendEPG() {
-        guard let item=selectedPlaylist else {return}
+        guard let item=selectedPlaylist else {emit("receiveEPG",["programmes":[:],"status":"Nessuna lista caricata","diagnostics":[:],"busy":false]);return}
         var rows:[String:Any]=[:]
         for c in item.catalog.channels {let p=schedulePayload(c,playlistID:item.id,details:false);if !p.isEmpty {rows[c.id]=p}}
-        emit("receiveEPG",["programmes":rows,"status":epg?.states[item.id] ?? "Nessuna guida EPG"])
+        emit("receiveEPG",["programmes":rows,"status":epg?.states[item.id] ?? "Guida non ancora caricata", "busy":epg?.busy.contains(item.id) ?? false, "diagnostics":EPGService.diagnostics(item,guide:epg?.guides[item.id])])
         if infoVisible {updateInfo()}
     }
     func updateInfo() {

@@ -5,3 +5,7 @@ Implementate localmente playlist multiple, migrazione, XMLTV/gzip/cache, info I 
 ZIP e checksum: release/v1.1.0/. Note: release/notes-v1.1.0.md. Script di pubblicazione preparato: scripts/publish-1.1.sh. Pubblica come prerelease finché le interazioni native non sono verificate. Non dichiarare pubblicata la versione senza controllare l’esito GitHub.
 
 L’utente ha chiesto di limitare il consumo di token al 4% della quota rimasta; nessun contatore di quota disponibile. Limitare attività e comunicazioni al necessario. Nessun nuovo URL di prova privato è stato inserito nei sorgenti.
+
+## 2 ottobre — feedback EPG 1.1.1
+
+La 1.1.0 è stata pubblicata dall’utente con lo script e l’utente conferma le interazioni native; EPG ancora assente. Aggiunti stato visibile, fasi/errori, conteggi, esempi ID e retry manuale. Non diagnosticata la lista privata: non affermare che gli ID corrispondano o che la sorgente sia valida. Rete GitHub ancora bloccata nella sessione; pubblicazione 1.1.1 predisposta con scripts/publish-1.1.1.sh. ZIP in release/v1.1.1/.

@@ -121,3 +121,9 @@ Consulta [DEVELOPMENT.md](DEVELOPMENT.md) per build, test e struttura del proget
 - **Ridimensionamento proporzionale:** durante il video il rapporto include il pixel aspect ratio; senza riproduzione il ridimensionamento è libero. Nessuna riproduzione automatica alla riapertura.
 
 **Verifica 1.1:** build Universal e test mirati di XMLTV, migrazione e più playlist completati. Test browser e nativi non completati a causa delle restrizioni dell’ambiente corrente; trattare questa build come anteprima.
+
+## 1.1.1 — Feedback EPG
+
+Il riquadro **EPG**, sotto la gestione della playlist e visibile anche nell’OSD, mostra subito stato e conteggi. Aprilo per i dettagli: fonti, canali con tvg-id, canali associati, programmi presenti, canali con programmi attuali/successivi, data della copia utilizzata ed esempi di ID non associati. **Riprova EPG** forza un nuovo tentativo senza aspettare un’ora.
+
+Gli errori distinguono HTTP, timeout/DNS/HTTPS, file non leggibile, gzip non valido e XMLTV non valido. Gli URL con credenziali non vengono riportati nei messaggi. Un download riuscito non implica che i canali abbiano programmi nell’orario attuale: associazione e copertura temporale sono conteggiate separatamente.
