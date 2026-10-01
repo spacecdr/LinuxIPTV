@@ -25,3 +25,7 @@ Log utente 00:39: AppKit NSInternalInconsistencyException in setupWindowForAfter
 ## 2 ottobre — layout/telecomando 1.1.5
 
 Lista ed EPG in dialog modali aperti dai pulsanti header, playlistBar nel modale Lista. Gestione nascosta in playback, selettore conservato. Telecomando trasferito da index.html a info.html, bridge WKWebView abilitato solo sul rettangolo del box comunicato da ResizeObserver. Timer nativo controlla il puntatore ogni 250ms: permanenza sospende la chiusura, uscita riavvia 5s. Monitor tastiera chiude le info con Esc/Backspace prima delle altre azioni, anche con focus sui controlli. Cambio canale dal telecomando conserva le info. Test browser modali/keyboard/layout/telecomando e feedback passati; build Universal/firma passate. Screenshot sintetici aggiornati. Release 1.1.5 predisposta; smoke nativo e regressione fullscreen passati su Apple Silicon. Hover e gesti fisici non verificati manualmente; nessun test Intel fisico.
+
+## 2 ottobre — 1.2.0 stabile
+
+Info con font/spazi em scalati sul viewport; OSD zoom tra .55 e 1 sotto 800×560 con dimensioni compensate. Sfondo panorama.svg incluso nel bundle e usato solo senza playback. README/sito consolidati sulle funzionalità attuali, immagini aggiornate e link releases/latest/download. Publish 1.2.0 usa --latest, non prerelease. Build Universal/firma e test browser (scaling, modali, EPG, controlli)/sito completati. Nessun nuovo intervento nativo rispetto alla 1.1.5; limiti Intel fisico e notarizzazione invariati.

@@ -33,11 +33,11 @@ await page.locator('#listMode').click();assert.equal(await page.locator('#cards.
 await page.evaluate(()=>receiveEPG({programmes:Object.fromEntries(channels.map(c=>[c.id,{now:{title:'Programma dimostrativo con un titolo lungo',start:Date.now()/1000-600,end:Date.now()/1000+600}}])),diagnostics:{}}));
 assert.equal(await page.locator('.link').count(),0);assert.equal(await page.locator('#cards.list .channel>.guide-now progress').count(),60);
 assert.equal(await page.locator('#cards').textContent().then(t=>t.includes('https://example.org')),false);
-for(const width of [1280,800,640,420]){await page.setViewportSize({width,height:width===420?500:720});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`Overflow ${width}`);assert((await page.locator('.channel').first().boundingBox()).height<70,'Compact EPG row')}
+for(const width of [1280,800,640,420]){await page.setViewportSize({width,height:width===420?500:720});await page.waitForFunction(()=>Math.abs(document.body.getBoundingClientRect().width-innerWidth)<1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`Overflow ${width}`);assert((await page.locator('.channel').first().boundingBox()).height<70,'Compact EPG row')}
 await page.setViewportSize({width:1280,height:800});await page.locator('#gridMode').click();await page.screenshot({path:path.join(__dirname,'catalog.png')});
 await page.goto(pathToFileURL(path.resolve(__dirname,'../Resources/info.html')).href);
 await page.evaluate(()=>{document.body.classList.add('shown');renderInfo({name:'Test',resolution:'HD',logo:'',volume:42,muted:false,buffer:3})});
 await page.locator('#mute').click();assert.equal(await page.evaluate(()=>calls.at(-1).action),'mute');assert.equal(await page.locator('#volume').inputValue(),'42');
-assert.deepEqual(errors,[]);console.log('PASS 6442 channels, pagination, groups, search, escaped metadata, keyboard navigation, favorites, playback bridge, backspace editing, grid/list, responsive sizes, no JS errors');
+const large=await page.locator('h1').evaluate(n=>parseFloat(getComputedStyle(n).fontSize));await page.setViewportSize({width:420,height:236});const small=await page.locator('h1').evaluate(n=>parseFloat(getComputedStyle(n).fontSize));assert(small<large,'Info font scales with window');assert((await page.locator('article').boundingBox()).height<=236*.85+1);assert.deepEqual(errors,[]);console.log('PASS 6442 channels, pagination, groups, search, escaped metadata, keyboard navigation, favorites, playback bridge, backspace editing, grid/list, responsive sizes, no JS errors');
 }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exit(1)});

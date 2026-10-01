@@ -2,7 +2,7 @@
 
 **Liste M3U, canali e preferiti. La tua IPTV sul Mac, con il player già incluso.**
 
-[Scarica per Intel e Apple Silicon](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.5) · [Pagina del progetto](https://spacecdr.github.io/MacIPTV/) · [Comandi](#comandi) · [Compilazione e test](DEVELOPMENT.md)
+[Scarica per Intel e Apple Silicon](https://github.com/spacecdr/MacIPTV/releases/latest) · [Pagina del progetto](https://spacecdr.github.io/MacIPTV/) · [Comandi](#comandi) · [Compilazione e test](DEVELOPMENT.md)
 
 ![Catalogo MacIPTV: gruppi, ricerca e canali in griglia](docs/assets/catalogo.png)
 
@@ -12,7 +12,7 @@ MacIPTV è un’applicazione standalone per macOS: carichi una lista M3U da file
 
 ## Download e installazione
 
-1. Scarica **MacIPTV-universal.zip** dalla [release](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.5).
+1. Scarica **MacIPTV-universal.zip** dalla [release](https://github.com/spacecdr/MacIPTV/releases/latest).
 2. Estrai lo ZIP e trascina **MacIPTV.app** in **Applicazioni**.
 3. Apri l’app e usa **Gestisci lista M3U** per caricare un file o incollare un URL.
 
@@ -53,7 +53,7 @@ La vista elenco affianca nome e gruppo al programma EPG, con orari e progression
 
 *Anteprima illustrativa: l’interfaccia reale è mostrata su uno sfondo grafico dimostrativo, non su una trasmissione TV.*
 
-Durante la riproduzione, **Invio** riapre lo stesso catalogo senza fermare il player. Seleziona un altro canale oppure torna al video. **B** attiva la finestra flottante; trascina il video per spostarla e l’angolo inferiore destro per ridimensionarla. Premendo di nuovo B ripristini la finestra precedente.
+Durante la riproduzione, **Invio** riapre lo stesso catalogo senza fermare il player. Seleziona un altro canale oppure torna al video. **B** attiva la finestra flottante; trascina il video per spostarla e l’angolo inferiore destro per ridimensionarla. Premendo di nuovo B ripristini la finestra precedente. Il clic singolo apre le info con il telecomando; il mouse sul box ne sospende la chiusura.
 
 ## Comandi
 
@@ -75,7 +75,7 @@ Durante la riproduzione, **Invio** riapre lo stesso catalogo senza fermare il pl
 | Cmd+L | Catalogo | Catalogo |
 | Cmd+Q | Esci | Esci |
 
-Nei campi di testo, frecce e Backspace mantengono il normale comportamento di modifica; Esc torna alla navigazione. Tab e Shift+Tab raggiungono gli altri controlli. Nella modalità senza bordi, doppio clic sul video alterna fullscreen e modalità precedente.
+Nei campi di testo, frecce e Backspace mantengono il normale comportamento di modifica. Esc chiude prima un modale o le info; nell’OSD interrompe il video. Tab e Shift+Tab raggiungono gli altri controlli. Nella modalità senza bordi, doppio clic sul video alterna fullscreen e modalità precedente.
 
 ## Requisiti
 
@@ -111,53 +111,16 @@ Lista e preferiti sono in `~/Library/Application Support/IPTVMac/`. Gli URL poss
 
 Consulta [DEVELOPMENT.md](DEVELOPMENT.md) per build, test e struttura del progetto. Il codice dell’app è distribuito con licenza **GPL-3.0-or-later**. VLC e le sue dipendenze conservano le rispettive licenze: dettagli, sorgenti e riferimenti in [THIRD_PARTY.md](THIRD_PARTY.md).
 
-## Novità della versione 1.1.0
+## 1.2.0 — Stabile
 
-- **I / informazioni:** nome, logo, dimensioni effettive del video e categoria SD/HD/Full HD/UHD quando applicabile. Non vengono attribuite sigle progressive/interlacciate se il motore non le rende disponibili. Programma attuale, descrizione, orari e programma successivo quando presenti. Dissolvenza, chiusura automatica dopo 5 secondi o premendo di nuovo I.
-- **EPG in background:** scoperta degli URL XMLTV tramite `x-tvg-url`, `url-tvg` o `tvg-url` dell’M3U. URL personalizzabile dalla modifica della lista. Supporto XML e gzip, cache locale, aggiornamento periodico senza attesa per navigazione o playback. Nessuna registrazione o servizio aggiuntivo. Se manca una guida, non vengono inventati programmi. Associazione tramite `tvg-id`, oppure nome esatto non ambiguo. In catalogo: titolo, orari e progressbar; descrizione soltanto nelle informazioni.
-- **Più playlist:** + aggiunge una lista; con almeno due liste compare il selettore. Modifica nome/sorgente/guida, aggiorna, esporta e rimuovi con conferma. Preferiti e stato di navigazione separati. La copia offline riguarda il catalogo, non i flussi video remoti. Migrazione automatica della precedente lista e dei preferiti.
-- **OSD essenziale:** gestione delle liste nascosta durante la riproduzione; il selettore resta utilizzabile per consultare altri cataloghi.
-- **Finestre:** primo avvio fullscreen; successivamente modalità, posizione e dimensioni vengono ricordate. Una sessione chiusa in borderless riparte in finestra normale. La geometria borderless viene conservata separatamente. Finestre riportate nell’area dei monitor disponibili.
-- **B solo durante il video**, senza pulsante Solo video. Esc dal borderless torna alla modalità precedente. Clic tenuto sul video trascina la finestra normale o borderless senza aprire l’OSD. Doppio clic alterna fullscreen e modalità precedente. Invio apre il catalogo.
-- **Ridimensionamento proporzionale:** durante il video il rapporto include il pixel aspect ratio; senza riproduzione il ridimensionamento è libero. Nessuna riproduzione automatica alla riapertura.
+- Info proporzionate alle dimensioni della finestra e OSD ridotto automaticamente nelle finestre piccole.
+- Sfondo illustrato con montagne nel catalogo quando non è in riproduzione un canale.
+- Barra compatta: modali Lista M3U ed EPG, playlist multiple e preferiti separati.
+- EPG XMLTV/gzip in background, cache, normalizzazione ID/nomi con controllo ambiguità e diagnostica.
+- Telecomando nelle info, mantenute aperte col mouse sopra; Esc/Backspace le chiudono.
+- Elenco compatto con programma, orari e progressione; dettagli nelle info.
+- Clic per info, trascinamento finestra, doppio clic fullscreen/ritorno, B borderless durante il video.
+- Esc apre OSD e poi ferma il video; Backspace conserva la navigazione. Sessione e proporzioni video ricordate.
+- Correzione del crash fullscreen dopo stop. Download del sito e README collegati alla release stabile più recente.
 
-**Verifica 1.1:** build Universal e test mirati di XMLTV, migrazione e più playlist completati. Test browser e nativi non completati a causa delle restrizioni dell’ambiente corrente; trattare questa build come anteprima.
-
-## 1.1.1 — Feedback EPG
-
-Il riquadro **EPG**, sotto la gestione della playlist e visibile anche nell’OSD, mostra subito stato e conteggi. Aprilo per i dettagli: fonti, canali con tvg-id, canali associati, programmi presenti, canali con programmi attuali/successivi, data della copia utilizzata ed esempi di ID non associati. **Riprova EPG** forza un nuovo tentativo senza aspettare un’ora.
-
-Gli errori distinguono HTTP, timeout/DNS/HTTPS, file non leggibile, gzip non valido e XMLTV non valido. Gli URL con credenziali non vengono riportati nei messaggi. Un download riuscito non implica che i canali abbiano programmi nell’orario attuale: associazione e copertura temporale sono conteggiate separatamente.
-
-## 1.1.2 — Associazione EPG automatica
-
-La playlist resta invariata. MacIPTV cerca prima l’ID esatto, poi confronta gli ID ignorando maiuscole, spazi, punti, trattini e underscore. Se necessario, confronta i nomi ripulendo i prefissi italiani IT-/IT|/IT: e i suffissi di qualità separati SD/HD/FHD/UHD/4K/H264/H265/HEVC.
-
-Gli abbinamenti automatici richiedono un unico canale della guida. Ambiguità e nomi discordanti non vengono risolti arbitrariamente. Numeri e +1/+24 restano distinti. Il pannello EPG distingue ID esatti, ID normalizzati, associazioni per nome, ambigui e mancanti. Le guide già in cache restano compatibili; nessuna nuova sorgente viene imposta.
-
-Build Universal Intel/Apple Silicon, macOS 13+, firma locale non notarizzata. Verificati abbinamenti, collisioni, timeshift, cache e feedback EPG con test mirati. Nessuna modifica al motore video.
-
-## 1.1.3 — Comandi e catalogo compatto
-
-- Clic singolo sul video: informazioni del canale. Trascinamento e ridimensionamento non attivano le info; doppio clic mantiene fullscreen/ritorno. Il clic singolo attende l’intervallo del doppio clic.
-- Esc dal video apre l’OSD, anche in borderless; Esc nell’OSD interrompe la riproduzione. Backspace conserva la navigazione precedente. B resta disponibile per uscire dal borderless.
-- Telecomando nascosto quando non è selezionato un canale in riproduzione.
-- Vista elenco compatta: nome/gruppo affiancati al programma EPG, orari e progressione. Rimossi gli URL dalle righe. Descrizioni dei programmi soltanto nelle info.
-
-Build Universal Intel/Apple Silicon, macOS 13+, firma locale non notarizzata.
-
-## 1.1.4 — Correzione crash fullscreen
-
-Corretto il crash al ritorno in finestra dopo lo stop del video e successivi passaggi fullscreen/finestra, tramite F o pulsante. Il ripristino del ridimensionamento libero ora usa gli incrementi della finestra anziché impostare un rapporto 0:0, che poteva produrre un’altezza NaN in AppKit. Il rapporto proporzionale durante il video resta attivo.
-
-Aggiunta regressione nativa con due cicli fullscreen/finestra dopo Esc/OSD/stop, controllo delle dimensioni e del ridimensionamento libero.
-
-Build Universal Intel/Apple Silicon, macOS 13+, firma locale non notarizzata.
-
-## 1.1.5 — Catalogo compatto e telecomando nelle info
-
-Lista M3U ed EPG sono pulsanti nella barra superiore e aprono modali. Il selettore della playlist, il nome e il pulsante + sono nel modale Lista; durante la riproduzione resta disponibile il solo selettore.
-
-Il telecomando è esclusivamente nel box informazioni: pausa, stop, cambio canale, muto, volume e buffer. Le info restano aperte quando il mouse è sopra il box; dopo l’uscita riparte il timer di 5 secondi. Esc o Backspace chiudono le info anche con il puntatore sopra. I clic fuori dal box restano disponibili per i gesti del video.
-
-Build Universal Intel/Apple Silicon, macOS 13+, firma locale non notarizzata.
+Universal Intel/Apple Silicon, macOS 13+, VLC incluso. Firma ad hoc, non notarizzata Apple. Intel fisico non verificato.

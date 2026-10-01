@@ -1,5 +1,5 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const nodes={};const context={document:{getElementById(id){return nodes[id]??=( {value:'',textContent:'',hidden:false,disabled:false} )},querySelectorAll(){return[]},addEventListener(){}},localStorage:{getItem(){return null}},setInterval(){},window:{},console};
+const nodes={};const context={document:{body:{style:{}},getElementById(id){return nodes[id]??=( {value:'',textContent:'',hidden:false,disabled:false} )},querySelectorAll(){return[]},addEventListener(){}},localStorage:{getItem(){return null}},setInterval(){},window:{addEventListener(){}},innerWidth:1280,innerHeight:800,console};
 vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../Resources/index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1],context);
 const send=d=>context.receiveEPG({programmes:{},...d});
 send({status:'Scaricamento…',busy:true,diagnostics:{sourceCount:1,total:5,withID:4,source:'XMLTV configurato'}});assert(nodes.epgRefresh.disabled);assert(nodes.epgStatus.textContent.includes('Scaricamento'));
