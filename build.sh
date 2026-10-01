@@ -45,8 +45,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>CFBundleDisplayName</key><string>MacIPTV</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>1.0.0</string>
-<key>CFBundleVersion</key><string>1</string>
+<key>CFBundleShortVersionString</key><string>1.1.0</string>
+<key>CFBundleVersion</key><string>2</string>
 <key>LSMinimumSystemVersion</key><string>13.0</string>
 <key>NSHighResolutionCapable</key><true/>
 <key>NSPrincipalClass</key><string>NSApplication</string>
@@ -55,8 +55,9 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </dict></plist>
 PLIST
 for ARCH in arm64 x86_64; do
+  xcrun clang -target "$ARCH-apple-macosx13.0" -isysroot "$SDK" -I "$VENDOR/include" -c Sources/VideoSupport.c -o "build/VideoSupport-$ARCH.o"
   xcrun swiftc -swift-version 5 -O -sdk "$SDK" -target "$ARCH-apple-macosx13.0" \
-    -import-objc-header Sources/VLCBridge.h Sources/Catalog.swift Sources/main.swift \
+    -import-objc-header Sources/VLCBridge.h Sources/*.swift "build/VideoSupport-$ARCH.o" -lz \
     -L "$VENDOR/lib" -lvlc -framework Cocoa -framework WebKit -framework CryptoKit \
     -Xlinker -rpath -Xlinker '@executable_path/../Frameworks/VLC/lib' \
     -o "build/MacIPTV-$ARCH"

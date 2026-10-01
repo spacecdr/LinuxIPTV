@@ -8,6 +8,8 @@ struct Channel: Codable, Equatable {
     let url: String
     let logo: String
     let headers: [String: String]
+    var tvgID: String? = nil
+    var tvgName: String? = nil
 }
 struct Catalog: Codable {
     var raw: String
@@ -26,6 +28,7 @@ enum M3U {
         guard let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else { throw PlaylistError.invalid("Codifica della lista non riconosciuta.") }
         let attr = try NSRegularExpression(pattern: "([\\w-]+)\\s*=\\s*\"([^\"]*)\"")
         var result: [Channel] = [], seen = Set<String>()
+        var tvgID = "", tvgName = ""
         var name = "", group = "", logo = "", headers: [String: String] = [:]
         func resolve(_ raw: String) -> String {
             guard !raw.isEmpty, let u = URL(string: raw, relativeTo: base)?.absoluteURL,
@@ -45,6 +48,7 @@ enum M3U {
                 }
                 name = split.map { String(line[line.index(after: $0)...]).trimmingCharacters(in: .whitespaces) } ?? ""
                 if name.isEmpty { name = attrs["tvg-name"] ?? "" }
+                tvgID = attrs["tvg-id"] ?? ""; tvgName = attrs["tvg-name"] ?? ""
                 group = attrs["group-title"] ?? ""
                 logo = resolve(attrs["tvg-logo"] ?? "")
                 headers = [:]
@@ -69,9 +73,9 @@ enum M3U {
                     let title = name.isEmpty ? (URL(string: address)?.lastPathComponent ?? "Canale") : name
                     let category = group.isEmpty ? "Senza gruppo" : group
                     let id = SHA256.hash(data: Data((address + "\n" + category + "\n" + title).utf8)).map { String(format: "%02x", $0) }.joined().prefix(24)
-                    if seen.insert(String(id)).inserted { result.append(Channel(id: String(id), name: title, group: category, url: address, logo: logo, headers: headers)) }
+                    if seen.insert(String(id)).inserted { result.append(Channel(id: String(id), name: title, group: category, url: address, logo: logo, headers: headers, tvgID: tvgID, tvgName: tvgName)) }
                 }
-                name = ""; group = ""; logo = ""; headers = [:]
+                name = ""; group = ""; logo = ""; headers = [:]; tvgID = ""; tvgName = ""
             }
         }
         guard !result.isEmpty else { throw PlaylistError.invalid("Nessun canale valido nella lista. La lista precedente è stata conservata.") }

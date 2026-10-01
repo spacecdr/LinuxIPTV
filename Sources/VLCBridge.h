@@ -22,3 +22,6 @@ void libvlc_video_set_key_input(libvlc_media_player_t *, unsigned);
 void libvlc_video_set_mouse_input(libvlc_media_player_t *, unsigned);
 unsigned libvlc_media_player_has_vout(libvlc_media_player_t *);
 int libvlc_video_get_size(libvlc_media_player_t *, unsigned, unsigned *, unsigned *);
+#include <stddef.h>
+double maciptv_ratio(libvlc_media_player_t *);
+unsigned char *maciptv_gunzip(const unsigned char *, size_t, size_t *);

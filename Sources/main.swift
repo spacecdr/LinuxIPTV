@@ -7,25 +7,23 @@ final class TVWindow: NSWindow {
     override var canBecomeMain: Bool { true }
 }
 final class VideoSurface: NSView {
-    var onClick: (() -> Void)?
+    var onDoubleClick: (() -> Void)?
     override var acceptsFirstResponder: Bool { true }
-    override func hitTest(_ point: NSPoint) -> NSView? { bounds.contains(convert(point, from: superview)) ? self : nil }
-    override func mouseDown(with event: NSEvent) {
-        guard let window = window else { return }
-        if event.clickCount == 2 { onClick?(); return }
-        if !window.styleMask.contains(.titled) && !window.styleMask.contains(.fullScreen) {
-            let p = convert(event.locationInWindow, from: nil)
-            if p.x > bounds.width - 28 && p.y < 28 {
-                let initial = window.frame, origin = NSEvent.mouseLocation
-                while let next = window.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
-                    if next.type == .leftMouseUp { break }
-                    let current = NSEvent.mouseLocation
-                    let w = max(420, initial.width + current.x - origin.x)
-                    let h = max(236, initial.height - current.y + origin.y)
-                    window.setFrame(NSRect(x: initial.minX, y: initial.maxY-h, width: w, height: h), display: true)
-                }
-            } else { window.performDrag(with: event) }
-        } else { onClick?() }
+    override func hitTest(_ point:NSPoint)->NSView? {bounds.contains(convert(point,from:superview)) ? self : nil}
+    override func mouseDown(with event:NSEvent){
+        guard let window=window else{return}
+        if event.clickCount==2 {onDoubleClick?();return}
+        guard !window.styleMask.contains(.fullScreen) else{return}
+        let p=convert(event.locationInWindow,from:nil)
+        if !window.styleMask.contains(.titled) && p.x>bounds.width-28 && p.y<28 {
+            let frame=window.frame,origin=NSEvent.mouseLocation,ratio=window.contentAspectRatio
+            while let e=window.nextEvent(matching:[.leftMouseDragged,.leftMouseUp]){
+                if e.type == .leftMouseUp{break};let mouse=NSEvent.mouseLocation
+                var w=max(420,frame.width+mouse.x-origin.x),h=max(236,frame.height-mouse.y+origin.y)
+                if ratio.width>0 {let r=ratio.width/ratio.height;if abs(mouse.x-origin.x)>abs(mouse.y-origin.y)*r{h=max(236,w/r);w=h*r}else{w=max(420,h*r);h=w/r}}
+                window.setFrame(NSRect(x:frame.minX,y:frame.maxY-h,width:w,height:h),display:true)
+            }
+        }else{window.performDrag(with:event)}
     }
 }
 final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMessageHandler, WKNavigationDelegate {
@@ -36,8 +34,27 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
     var player: OpaquePointer!
     let engine = DispatchQueue(label: "IPTVMac.VLC")
     var store: Store!
-    var catalog: Catalog?
-    var favorites = Set<String>()
+    var library = PlaylistLibrary()
+    var catalog: Catalog? {
+        get { selectedPlaylist?.catalog }
+        set { if let value=newValue { if let i=library.selectedIndex {library.playlists[i].catalog=value} else {let item=Playlist(name:"Lista",catalog:value);library.playlists.append(item);library.selectedID=item.id} } }
+    }
+    var favorites: Set<String> {
+        get { selectedPlaylist?.favorites ?? [] }
+        set { if let i=library.selectedIndex {library.playlists[i].favorites=newValue} }
+    }
+    var session = WindowSession()
+    var epg: EPGService!
+    var playingPlaylistID = ""
+    var transitioning = false
+    var borderReturnFullscreen = false
+    var fullReturnFloating = false
+    var videoRatio = 0.0
+    var infoWeb: InfoWebView!
+    var infoVisible = false
+    var infoTimer: Timer?
+    var browseSave: DispatchWorkItem?
+    var lastGuideTick = Date.distantPast
     var current: Channel?
     var visible = true
     var floating = false
@@ -63,9 +80,12 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         do {
             let override = smoke ? URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("IPTVMac-smoke-\(ProcessInfo.processInfo.processIdentifier)") : nil
             store = try Store(directory: override)
-            catalog = try store.load("catalog.json", as: Catalog.self)
-            favorites = Set(try store.load("favorites.json", as: [String].self) ?? [])
+            library = try PlaylistLibrary.restore(store)
+            session = try store.load("session.json",as:WindowSession.self) ?? WindowSession()
+            epg = EPGService(store:store);epg.onChange = { [weak self] in self?.sendEPG() }
         } catch { startError = "Impossibile leggere i dati salvati: \(error.localizedDescription)" }
+        let launchFull = session.mode == "fullscreen"
+        transitioning = true
         setupMenu()
         window = TVWindow(contentRect: savedFrame, styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         window.title = "MacIPTV"
@@ -74,12 +94,12 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         window.backgroundColor = .black
         window.delegate = self
         window.isReleasedWhenClosed = false
-        window.center()
+        window.setFrame(fitOnScreen(NSRectFromString(session.normal)),display:true)
         let root = NSView(frame: window.contentView!.bounds)
         root.autoresizingMask = [.width, .height]
         surface = VideoSurface(frame: root.bounds)
         surface.autoresizingMask = [.width, .height]
-        surface.onClick = { [weak self] in self?.showMenu() }
+        surface.onDoubleClick = { [weak self] in self?.toggleFullscreen() }
         root.addSubview(surface)
         let config = WKWebViewConfiguration()
         config.userContentController.add(self, name: "native")
@@ -88,6 +108,7 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         web.setValue(false, forKey: "drawsBackground")
         web.navigationDelegate = self
         root.addSubview(web)
+        setupInfo(root)
         window.contentView = root
         let plugins = Bundle.main.bundleURL.appendingPathComponent("Contents/Frameworks/VLC/plugins").path
         setenv("VLC_PLUGIN_PATH", plugins, 1)
@@ -109,7 +130,8 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
             guard let self = self, NSApp.keyWindow === self.window, !self.visible else { return e }
             if e.modifierFlags.contains(.command) { return e }
             switch e.keyCode {
-            case 36, 76, 53, 51: self.showMenu()
+            case 53: self.escape()
+            case 36, 76, 51: self.showMenu()
             case 49: self.pause()
             case 126: self.step(1)
             case 125: self.step(-1)
@@ -117,6 +139,7 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
             case 124: self.setVolume(self.volume + 5)
             default:
                 switch e.charactersIgnoringModifiers?.lowercased() {
+                case "i": self.toggleInfo()
                 case "f": self.toggleFullscreen()
                 case "b": self.toggleBorderless()
                 case "m": self.toggleMute()
@@ -127,7 +150,8 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
             return nil
         }
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in self?.tick() }
-        if !smoke && !ProcessInfo.processInfo.arguments.contains("--windowed") {
+        transitioning = false
+        if !smoke && launchFull && !ProcessInfo.processInfo.arguments.contains("--windowed") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { self.window.toggleFullScreen(nil) }
         }
     }
@@ -136,7 +160,6 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         appMenu.addItem(withTitle: "Apri lista M3U…", action: #selector(openFile), keyEquivalent: "o").target = self
         appMenu.addItem(withTitle: "Catalogo", action: #selector(showMenu), keyEquivalent: "l").target = self
         appMenu.addItem(withTitle: "Schermo intero / Finestra", action: #selector(toggleFullscreen), keyEquivalent: "f").target = self
-        appMenu.addItem(withTitle: "Video senza bordi in primo piano", action: #selector(toggleBorderless), keyEquivalent: "b").target = self
         appMenu.addItem(NSMenuItem.separator())
         appMenu.addItem(withTitle: "Esci da MacIPTV", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         item.submenu = appMenu; bar.addItem(item)
@@ -147,7 +170,8 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         editItem.submenu = edit; bar.addItem(editItem); NSApp.mainMenu = bar
     }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        sendCatalog(); sendState()
+        sendLibrary(); sendCatalog(); sendState()
+        if let item=selectedPlaylist {epg?.refresh(item)}
         if let error = startError { report(error) }
         if smoke { runSmoke() }
     }
@@ -162,16 +186,24 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         let channels = catalog?.channels ?? []
         let data = (try? JSONEncoder().encode(channels)) ?? Data("[]".utf8)
         let objects = (try? JSONSerialization.jsonObject(with: data)) ?? []
-        emit("receiveCatalog", ["channels": objects, "favorites": Array(favorites), "source": catalog?.source ?? ""])
+        var payload:[String:Any] = ["channels":objects,"favorites":Array(favorites),"source":catalog?.source ?? ""]
+        if let browse=selectedPlaylist?.browse,let data=try? JSONEncoder().encode(browse),let object=try? JSONSerialization.jsonObject(with:data){payload["browse"]=object}
+        emit("receiveCatalog",payload);sendEPG()
     }
     func sendState() {
-        emit("receiveState", ["current": current?.id ?? "", "name": current?.name ?? "Nessun canale in riproduzione", "status": status, "active": current != nil, "volume": volume, "muted": muted, "floating": floating, "fullscreen": window.styleMask.contains(.fullScreen)])
+        emit("receiveState", ["current": playingPlaylistID == library.selectedID ? current?.id ?? "" : "", "name": current?.name ?? "Nessun canale in riproduzione", "status": status, "active": current != nil, "volume": volume, "muted": muted, "floating": floating, "fullscreen": window.styleMask.contains(.fullScreen)])
     }
     func report(_ message: String) { showMenu(); emit("showError", ["message": message]) }
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.frameInfo.isMainFrame, message.frameInfo.request.url?.isFileURL == true,
               let body = message.body as? [String: Any], let action = body["action"] as? String else { return }
         switch action {
+        case "selectPlaylist": selectPlaylist(body["id"] as? String ?? "")
+        case "savePlaylist": editPlaylist(body)
+        case "removePlaylist": removePlaylist()
+        case "browse": rememberBrowse(body)
+        case "info": toggleInfo()
+        case "escape": escape()
         case "open": openFile()
         case "import": importURL(body["url"] as? String ?? "")
         case "refresh": importURL(catalog?.source ?? "")
@@ -184,7 +216,7 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
             if let id = body["id"] as? String, catalog?.channels.contains(where: { $0.id == id }) == true {
                 var updated = favorites
                 if !updated.insert(id).inserted { updated.remove(id) }
-                do { try store.save(Array(updated), as: "favorites.json"); favorites = updated; emit("receiveFavorites", Array(favorites)) } catch { report(error.localizedDescription) }
+                do { let old=favorites;favorites=updated;do{try saveLibrary()}catch{favorites=old;throw error}; emit("receiveFavorites", Array(favorites)) } catch { report(error.localizedDescription) }
             }
         case "hide": if current != nil { hideMenu() }
         case "stop": stop()
@@ -197,58 +229,8 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         default: break
         }
     }
-    @objc func openFile() {
-        let panel = NSOpenPanel(); panel.allowedContentTypes = [UTType(filenameExtension: "m3u"), UTType(filenameExtension: "m3u8"), .plainText].compactMap { $0 }; panel.canChooseDirectories = false
-        panel.beginSheetModal(for: window) { result in
-            if result == .OK, let url = panel.url { self.loadTask?.cancel(); self.generation += 1; self.readPlaylist(url, source: "", base: url) }
-        }
-    }
-    func readPlaylist(_ url: URL, source: String, base: URL) {
-        let token = generation
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-                guard size <= M3U.limit else { throw PlaylistError.invalid("La lista supera 20 MB.") }
-                let data = try Data(contentsOf: url)
-                let channels = try M3U.parse(data, base: base)
-                let raw = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) ?? ""
-                let value = Catalog(raw: raw, source: source, base: base.absoluteString, channels: channels)
-                DispatchQueue.main.async {
-                    guard token == self.generation else { return }
-                    do {
-                        try self.store.save(value, as: "catalog.json"); self.catalog = value; self.status = "\(channels.count) canali caricati"; self.sendCatalog(); self.sendState()
-                    } catch { self.report("Salvataggio non riuscito: \(error.localizedDescription)") }
-                }
-            } catch { DispatchQueue.main.async { if token == self.generation { self.report(error.localizedDescription) } } }
-        }
-    }
-    func importURL(_ text: String) {
-        guard let url = URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines)), ["https", "http"].contains(url.scheme?.lowercased() ?? ""), url.host != nil else { report("Inserisci un URL HTTP o HTTPS valido."); return }
-        loadTask?.cancel(); generation += 1; let token = generation
-        status = "Scaricamento lista…"; sendState()
-        var request = URLRequest(url: url); request.timeoutInterval = 45
-        loadTask = URLSession.shared.downloadTask(with: request) { temp, response, error in
-            if let error = error as NSError?, error.code == NSURLErrorCancelled { return }
-            guard let temp = temp, error == nil, let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-                DispatchQueue.main.async { if token == self.generation { self.report("Download non riuscito. La lista precedente è stata conservata.") } }; return
-            }
-            // The URLSession temporary file disappears when this completion handler returns.
-            do {
-                let size = try temp.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-                guard size <= M3U.limit else { throw PlaylistError.invalid("La lista supera 20 MB.") }
-                let data = try Data(contentsOf: temp)
-                let channels = try M3U.parse(data, base: http.url ?? url)
-                let raw = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) ?? ""
-                let value = Catalog(raw: raw, source: url.absoluteString, base: (http.url ?? url).absoluteString, channels: channels)
-                DispatchQueue.main.async {
-                    guard token == self.generation else { return }
-                    do { try self.store.save(value, as: "catalog.json"); self.catalog = value; self.status = "\(channels.count) canali caricati"; self.sendCatalog(); self.sendState() }
-                    catch { self.report(error.localizedDescription) }
-                }
-            } catch { DispatchQueue.main.async { if token == self.generation { self.report(error.localizedDescription) } } }
-        }; loadTask?.resume()
-    }
     func exportFile() {
+        guard current == nil else{return}
         guard let catalog = catalog else { return }
         let panel = NSSavePanel(); panel.nameFieldStringValue = "playlist.m3u"
         panel.beginSheetModal(for: window) { result in
@@ -260,6 +242,7 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
     func play(_ channel: Channel) {
         guard player != nil else { report("Motore VLC non disponibile."); return }
         playbackGeneration += 1; let playToken = playbackGeneration; engineReady = false
+        playingPlaylistID = library.selectedID ?? "";videoRatio=0;window.contentAspectRatio = .zero;hideInfo()
         current = channel; playbackStart = Date(); status = "Connessione…"; hideMenu(); sendState()
         let cache = buffer, volume = self.volume, muted = self.muted
         engine.async {
@@ -290,40 +273,15 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
             status = "Riproduzione affidata a VLC esterno"; sendState()
         } catch { report(error.localizedDescription) }
     }
-    func stop() { playbackGeneration += 1; engineReady = false; current = nil; status = "Riproduzione arrestata"; if player != nil { engine.async { libvlc_media_player_stop(self.player) } }; showMenu(); sendState() }
+    func stop() { hideInfo();fullReturnFloating=false;pendingBorderless=false;if floating{leaveFloating()};videoRatio=0;window.contentAspectRatio = .zero;playbackGeneration += 1; engineReady = false; current = nil; status = "Riproduzione arrestata"; if player != nil { engine.async { libvlc_media_player_stop(self.player) } }; showMenu(); sendState() }
     func pause() { if player != nil { engine.async { libvlc_media_player_pause(self.player) } } }
     func setVolume(_ value: Int32) { volume = min(100, max(0, value)); if player != nil { let v = volume; engine.async { libvlc_audio_set_volume(self.player, v) } }; sendState() }
     func toggleMute() { muted.toggle(); if player != nil { let m = muted; engine.async { libvlc_audio_set_mute(self.player, m ? 1 : 0) } }; sendState() }
     func step(_ direction: Int) { web.evaluateJavaScript("stepChannel(\(direction))", completionHandler: nil) }
-    @objc func showMenu() { visible = true; web?.isHidden = false; window?.makeFirstResponder(web); web?.evaluateJavaScript("restoreFocus()", completionHandler: nil) }
+    @objc func showMenu() { hideInfo();visible = true; web?.isHidden = false; window?.makeFirstResponder(web); web?.evaluateJavaScript("restoreFocus()", completionHandler: nil) }
     func hideMenu() { visible = false; web.isHidden = true; window.makeFirstResponder(surface) }
-    @objc func toggleFullscreen() {
-        if floating { restoreBorders() }
-        window.toggleFullScreen(nil)
-    }
-    @objc func toggleBorderless() {
-        if window.styleMask.contains(.fullScreen) { pendingBorderless = true; window.toggleFullScreen(nil); return }
-        if floating { restoreBorders() } else {
-            savedFrame = window.frame
-            floating = true
-            window.styleMask = [.borderless, .resizable]
-            window.level = .floating
-            window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-            window.setFrame(NSRect(x: savedFrame.minX, y: savedFrame.minY, width: 640, height: 360), display: true)
-            window.makeKeyAndOrderFront(nil)
-            if current != nil { hideMenu() }
-        }
-        sendState()
-    }
-    func restoreBorders() {
-        floating = false; window.level = .normal
-        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-        window.collectionBehavior = [.fullScreenPrimary]
-        window.setFrame(savedFrame, display: true); window.makeKeyAndOrderFront(nil)
-    }
-    func windowDidExitFullScreen(_ notification: Notification) { if pendingBorderless { pendingBorderless = false; toggleBorderless() }; sendState() }
-    func windowDidEnterFullScreen(_ notification: Notification) { sendState() }
     func tick() {
+        if Date().timeIntervalSince(lastGuideTick)>30 {lastGuideTick=Date();if let item=selectedPlaylist{epg?.refresh(item)};sendEPG()}
         guard player != nil, current != nil, engineReady else { return }
         let state = libvlc_media_player_get_state(player)
         let elapsed = Date().timeIntervalSince(playbackStart)
@@ -336,11 +294,13 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         default: break
         }
         if elapsed > 45 && (state == 0 || state == 1 || state == 2) { stop(); report("Tempo di connessione scaduto. Verifica la lista o riprova il canale."); return }
+        if state==3 {let ratio=maciptv_ratio(player);if ratio>0 && abs(ratio-videoRatio)>0.01 {videoRatio=ratio;applyRatio()}}
+        if infoVisible {updateInfo()}
         if visible { sendState() }
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        timer?.invalidate(); loadTask?.cancel()
+        saveWindow();try? saveLibrary();browseSave?.cancel();infoTimer?.invalidate();timer?.invalidate(); loadTask?.cancel()
         if let monitor = monitor { NSEvent.removeMonitor(monitor) }
         guard player != nil else { return .terminateNow }
         engine.async {
@@ -361,7 +321,7 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         catalog = Catalog(raw: "", source: "", base: "", channels: [channel]); volume = 0; sendCatalog(); play(channel)
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
             self.smokeTime = libvlc_media_player_get_time(self.player)
-            self.showMenu(); self.sendState()
+            self.showMenu(); self.sendState();self.toggleInfo()
             self.web.evaluateJavaScript("document.querySelectorAll('.channel').length") { result, error in
                 print("SMOKE catalogRows=\(result ?? "nil") jsError=\(String(describing: error)) time=\(self.smokeTime)")
             }
