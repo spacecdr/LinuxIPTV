@@ -2,7 +2,7 @@
 
 **Liste M3U, canali e preferiti. La tua IPTV sul Mac, con il player già incluso.**
 
-[Scarica per Intel e Apple Silicon](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.3) · [Pagina del progetto](https://spacecdr.github.io/MacIPTV/) · [Comandi](#comandi) · [Compilazione e test](DEVELOPMENT.md)
+[Scarica per Intel e Apple Silicon](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.4) · [Pagina del progetto](https://spacecdr.github.io/MacIPTV/) · [Comandi](#comandi) · [Compilazione e test](DEVELOPMENT.md)
 
 ![Catalogo MacIPTV: gruppi, ricerca e canali in griglia](docs/assets/catalogo.png)
 
@@ -12,7 +12,7 @@ MacIPTV è un’applicazione standalone per macOS: carichi una lista M3U da file
 
 ## Download e installazione
 
-1. Scarica **MacIPTV-universal.zip** dalla [release](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.3).
+1. Scarica **MacIPTV-universal.zip** dalla [release](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.4).
 2. Estrai lo ZIP e trascina **MacIPTV.app** in **Applicazioni**.
 3. Apri l’app e usa **Gestisci lista M3U** per caricare un file o incollare un URL.
 
@@ -143,5 +143,13 @@ Build Universal Intel/Apple Silicon, macOS 13+, firma locale non notarizzata. Ve
 - Esc dal video apre l’OSD, anche in borderless; Esc nell’OSD interrompe la riproduzione. Backspace conserva la navigazione precedente. B resta disponibile per uscire dal borderless.
 - Telecomando nascosto quando non è selezionato un canale in riproduzione.
 - Vista elenco compatta: nome/gruppo affiancati al programma EPG, orari e progressione. Rimossi gli URL dalle righe. Descrizioni dei programmi soltanto nelle info.
+
+Build Universal Intel/Apple Silicon, macOS 13+, firma locale non notarizzata.
+
+## 1.1.4 — Correzione crash fullscreen
+
+Corretto il crash al ritorno in finestra dopo lo stop del video e successivi passaggi fullscreen/finestra, tramite F o pulsante. Il ripristino del ridimensionamento libero ora usa gli incrementi della finestra anziché impostare un rapporto 0:0, che poteva produrre un’altezza NaN in AppKit. Il rapporto proporzionale durante il video resta attivo.
+
+Aggiunta regressione nativa con due cicli fullscreen/finestra dopo Esc/OSD/stop, controllo delle dimensioni e del ridimensionamento libero.
 
 Build Universal Intel/Apple Silicon, macOS 13+, firma locale non notarizzata.

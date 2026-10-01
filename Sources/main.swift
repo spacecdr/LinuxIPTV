@@ -262,7 +262,7 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
     func play(_ channel: Channel) {
         guard player != nil else { report("Motore VLC non disponibile."); return }
         playbackGeneration += 1; let playToken = playbackGeneration; engineReady = false
-        playingPlaylistID = library.selectedID ?? "";videoRatio=0;window.contentAspectRatio = .zero;hideInfo()
+        playingPlaylistID = library.selectedID ?? "";videoRatio=0;window.contentResizeIncrements = NSSize(width: 1, height: 1);hideInfo()
         current = channel; playbackStart = Date(); status = "Connessione…"; hideMenu(); sendState()
         let cache = buffer, volume = self.volume, muted = self.muted
         engine.async {
@@ -293,7 +293,7 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
             status = "Riproduzione affidata a VLC esterno"; sendState()
         } catch { report(error.localizedDescription) }
     }
-    func stop() { hideInfo();fullReturnFloating=false;pendingBorderless=false;if floating{leaveFloating()};videoRatio=0;window.contentAspectRatio = .zero;playbackGeneration += 1; engineReady = false; current = nil; status = "Riproduzione arrestata"; if player != nil { engine.async { libvlc_media_player_stop(self.player) } }; showMenu(); sendState() }
+    func stop() { hideInfo();fullReturnFloating=false;pendingBorderless=false;if floating{leaveFloating()};videoRatio=0;window.contentResizeIncrements = NSSize(width: 1, height: 1);playbackGeneration += 1; engineReady = false; current = nil; status = "Riproduzione arrestata"; if player != nil { engine.async { libvlc_media_player_stop(self.player) } }; showMenu(); sendState() }
     func pause() { if player != nil { engine.async { libvlc_media_player_pause(self.player) } } }
     func setVolume(_ value: Int32) { volume = min(100, max(0, value)); if player != nil { let v = volume; engine.async { libvlc_audio_set_volume(self.player, v) } }; sendState() }
     func toggleMute() { muted.toggle(); if player != nil { let m = muted; engine.async { libvlc_audio_set_mute(self.player, m ? 1 : 0) } }; sendState() }
@@ -371,6 +371,25 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
             print("SMOKE firstEscapeOSD=\(self.visible && self.current != nil && !self.infoVisible)")
             self.escape()
             print("SMOKE secondEscapeStopped=\(self.current == nil && self.visible)")
+            if ProcessInfo.processInfo.arguments.contains("--fullscreen-regression") {
+                self.runFullscreenRegression()
+            } else { NSApp.terminate(nil) }
+        }
+    }
+    func runFullscreenRegression() {
+        // After stop: repeat the same path used by F and the fullscreen button.
+        for step in 0..<4 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(step*3+1)) {
+                precondition(!self.transitioning, "Fullscreen transition did not complete")
+                self.toggleFullscreen()
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 13) {
+            let frame = self.window.frame
+            precondition(!self.transitioning && !self.window.styleMask.contains(.fullScreen))
+            precondition(frame.width.isFinite && frame.height.isFinite && frame.width > 0 && frame.height > 0)
+            precondition(self.current == nil && self.window.contentResizeIncrements == NSSize(width: 1, height: 1))
+            print("PASS fullscreen regression: two fullscreen/window cycles after stop, finite geometry, free resizing")
             NSApp.terminate(nil)
         }
     }

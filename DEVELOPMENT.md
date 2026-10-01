@@ -71,3 +71,13 @@ Lo ZIP dell’app va allegato alle GitHub Releases, non aggiunto alla cronologia
 Nuovi moduli Library (multi-playlist e migrazione), EPG (XMLTV/cache), Playlists (gestione), Windows (geometria/sessione), Info (overlay separato) e VideoSupport.c (SAR/gzip). `Tests/Features/main.swift` copre scoperta guida, ID, timezone, programmi, migrazione e isolamento preferiti.
 
 In questa sessione l’ambiente limita rete e avvio GUI: il browser Chromium termina all’avvio. Non presentare i test grafici della 1.0 come verifica completa della 1.1. La pubblicazione GitHub richiede il ripristino dell’accesso di rete.
+
+## Regressione fullscreen dopo stop (1.1.4)
+
+Con un video sintetico locale di almeno 20 secondi:
+
+```sh
+dist/MacIPTV.app/Contents/MacOS/MacIPTV --smoke-test --fullscreen-regression --fixture /percorso/video.ts
+```
+
+Dopo il normale smoke test, ferma il video con la sequenza Esc/OSD/stop e ripete due cicli fullscreen/finestra. Verifica geometria finita e ridimensionamento libero. Per rimuovere il vincolo di proporzione, impostare `contentResizeIncrements` a `(1, 1)`, mai assegnare esplicitamente `contentAspectRatio = .zero`: al ritorno dal fullscreen AppKit può calcolare un’altezza NaN.

@@ -64,7 +64,8 @@ extension App {
     }
     func windowDidEnterFullScreen(_ notification: Notification) { transitioning = false; session.mode = "fullscreen"; saveWindow(); sendState() }
     func applyRatio() {
-        guard current != nil, videoRatio > 0 else { window.contentAspectRatio = .zero; return }
+        // Reset through resize increments: assigning a 0:0 aspect ratio can produce NaN on fullscreen exit.
+        guard current != nil, videoRatio.isFinite, videoRatio > 0 else { window.contentResizeIncrements = NSSize(width: 1, height: 1); return }
         window.contentAspectRatio = NSSize(width: videoRatio, height: 1)
         guard !window.styleMask.contains(.fullScreen), !transitioning else { return }
         let content = window.contentRect(forFrameRect: window.frame)
