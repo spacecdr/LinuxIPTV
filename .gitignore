@@ -1,0 +1,11 @@
+/build/
+/dist/
+/vendor/
+/private/
+/node_modules/
+/release/*
+!/release/notes-v1.0.0.md
+/Tests/*.ts
+/Tests/*.png
+/Tests/*.log
+.DS_Store

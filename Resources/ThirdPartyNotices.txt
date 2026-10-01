@@ -1,0 +1,7 @@
+MacIPTV bundles the VLC 3.0.24 runtime (libVLC, libvlccore and plugins), Copyright VideoLAN and the respective contributors.
+Official binary distribution: https://download.videolan.org/vlc/3.0.24/macosx/vlc-3.0.24-universal.dmg
+Corresponding VLC source: https://download.videolan.org/vlc/3.0.24/vlc-3.0.24.tar.xz
+VLC build dependencies and build instructions: https://code.videolan.org/videolan/vlc/-/tree/3.0.24/contrib
+libVLC and libvlccore are under LGPL 2.1 or later; VLC plugins include GPL 2 or later components and third-party libraries under their respective licenses. See bundled VLC share files, source notices, and COPYING files. This app's source code is provided in the MacIPTV project at https://github.com/spacecdr/MacIPTV under GPL 3.0 or later. Relinking with a modified compatible VLC runtime is permitted; rebuild and locally re-sign the app using build.sh.
+The app uses dynamically linked system frameworks from Apple. No VLC trademark endorsement is implied.
+This local development build is not notarized and has an ad-hoc code signature.
