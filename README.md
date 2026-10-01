@@ -2,7 +2,7 @@
 
 **Liste M3U, canali e preferiti. La tua IPTV sul Mac, con il player già incluso.**
 
-[Scarica per Intel e Apple Silicon](https://github.com/spacecdr/MacIPTV/releases/latest) · [Pagina del progetto](https://spacecdr.github.io/MacIPTV/) · [Comandi](#comandi) · [Compilazione e test](DEVELOPMENT.md)
+[Scarica per Intel e Apple Silicon](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.2) · [Pagina del progetto](https://spacecdr.github.io/MacIPTV/) · [Comandi](#comandi) · [Compilazione e test](DEVELOPMENT.md)
 
 ![Catalogo MacIPTV: gruppi, ricerca e canali in griglia](docs/assets/catalogo.png)
 
@@ -12,13 +12,13 @@ MacIPTV è un’applicazione standalone per macOS: carichi una lista M3U da file
 
 ## Download e installazione
 
-1. Scarica **MacIPTV-universal.zip** dalla [release](https://github.com/spacecdr/MacIPTV/releases/latest).
+1. Scarica **MacIPTV-universal.zip** dalla [release](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.2).
 2. Estrai lo ZIP e trascina **MacIPTV.app** in **Applicazioni**.
 3. Apri l’app e usa **Gestisci lista M3U** per caricare un file o incollare un URL.
 
 L’archivio contiene entrambe le architetture: **Intel x86_64 e Apple Silicon arm64**. Non occorre installare VLC, Python, Homebrew o un browser. Il player utilizza il motore VLC incorporato.
 
-La versione 1.1.0 ha una firma locale ad hoc e **non è notarizzata Apple**. Se macOS ne impedisce l’apertura, dopo il primo tentativo verifica **Impostazioni di Sistema → Privacy e sicurezza → Apri comunque**. Non occorre disattivare Gatekeeper. I checksum della release permettono di verificare l’integrità del download.
+L’app ha una firma locale ad hoc e **non è notarizzata Apple**. Se macOS ne impedisce l’apertura, dopo il primo tentativo verifica **Impostazioni di Sistema → Privacy e sicurezza → Apri comunque**. Non occorre disattivare Gatekeeper. I checksum della release permettono di verificare l’integrità del download.
 
 ## Funzionalità
 
@@ -127,3 +127,11 @@ Consulta [DEVELOPMENT.md](DEVELOPMENT.md) per build, test e struttura del proget
 Il riquadro **EPG**, sotto la gestione della playlist e visibile anche nell’OSD, mostra subito stato e conteggi. Aprilo per i dettagli: fonti, canali con tvg-id, canali associati, programmi presenti, canali con programmi attuali/successivi, data della copia utilizzata ed esempi di ID non associati. **Riprova EPG** forza un nuovo tentativo senza aspettare un’ora.
 
 Gli errori distinguono HTTP, timeout/DNS/HTTPS, file non leggibile, gzip non valido e XMLTV non valido. Gli URL con credenziali non vengono riportati nei messaggi. Un download riuscito non implica che i canali abbiano programmi nell’orario attuale: associazione e copertura temporale sono conteggiate separatamente.
+
+## 1.1.2 — Associazione EPG automatica
+
+La playlist resta invariata. MacIPTV cerca prima l’ID esatto, poi confronta gli ID ignorando maiuscole, spazi, punti, trattini e underscore. Se necessario, confronta i nomi ripulendo i prefissi italiani IT-/IT|/IT: e i suffissi di qualità separati SD/HD/FHD/UHD/4K/H264/H265/HEVC.
+
+Gli abbinamenti automatici richiedono un unico canale della guida. Ambiguità e nomi discordanti non vengono risolti arbitrariamente. Numeri e +1/+24 restano distinti. Il pannello EPG distingue ID esatti, ID normalizzati, associazioni per nome, ambigui e mancanti. Le guide già in cache restano compatibili; nessuna nuova sorgente viene imposta.
+
+Build Universal Intel/Apple Silicon, macOS 13+, firma locale non notarizzata. Verificati abbinamenti, collisioni, timeshift, cache e feedback EPG con test mirati. Nessuna modifica al motore video.

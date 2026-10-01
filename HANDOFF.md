@@ -9,3 +9,7 @@ L’utente ha chiesto di limitare il consumo di token al 4% della quota rimasta;
 ## 2 ottobre — feedback EPG 1.1.1
 
 La 1.1.0 è stata pubblicata dall’utente con lo script e l’utente conferma le interazioni native; EPG ancora assente. Aggiunti stato visibile, fasi/errori, conteggi, esempi ID e retry manuale. Non diagnosticata la lista privata: non affermare che gli ID corrispondano o che la sorgente sia valida. Rete GitHub ancora bloccata nella sessione; pubblicazione 1.1.1 predisposta con scripts/publish-1.1.1.sh. ZIP in release/v1.1.1/.
+
+## 2 ottobre — associazione automatica EPG 1.1.2
+
+La 1.1.1 è stata pubblicata dopo il ripristino della rete. La 1.1.2 aggiunge EPGMatcher: ID esatto, ID normalizzato, nomi ripuliti; collisioni bloccate, +1/+24 e numeri preservati. Indice riutilizzato per l’invio del catalogo, compatibile con cache esistenti. Nessuna modifica delle playlist o della sorgente scelta dall’utente. Test Features e feedback EPG passati; catalogo browser su Chrome passato. Build Universal e firma verificate. Nessun test su Intel fisico o nuova verifica audio/video nativa. Release predisposta in release/v1.1.2, script scripts/publish-1.1.2.sh.

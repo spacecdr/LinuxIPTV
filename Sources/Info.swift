@@ -19,9 +19,9 @@ extension App {
         infoWeb.evaluateJavaScript("requestAnimationFrame(()=>document.body.classList.add('shown'))",completionHandler:nil)
         infoTimer?.invalidate(); infoTimer = Timer.scheduledTimer(withTimeInterval:5,repeats:false) { [weak self] _ in self?.hideInfo() }
     }
-    func schedulePayload(_ channel: Channel, playlistID: String, details: Bool) -> [String:Any] {
+    func schedulePayload(_ channel: Channel, playlistID: String, details: Bool, matcher: EPGMatcher? = nil) -> [String:Any] {
         guard let guide = epg?.guides[playlistID] else { return [:] }
-        let (now,next) = guide.schedule(channel)
+        let (now,next) = guide.schedule(channel, matcher: matcher)
         func encode(_ p: Programme) -> [String:Any] {
             var d:[String:Any] = ["title":p.title,"start":p.start.timeIntervalSince1970]
             if let end=p.end { d["end"]=end.timeIntervalSince1970 }
@@ -31,8 +31,9 @@ extension App {
     }
     func sendEPG() {
         guard let item=selectedPlaylist else {emit("receiveEPG",["programmes":[:],"status":"Nessuna lista caricata","diagnostics":[:],"busy":false]);return}
+        let matcher = epg?.guides[item.id].map { EPGMatcher($0) }
         var rows:[String:Any]=[:]
-        for c in item.catalog.channels {let p=schedulePayload(c,playlistID:item.id,details:false);if !p.isEmpty {rows[c.id]=p}}
+        for c in item.catalog.channels {let p=schedulePayload(c,playlistID:item.id,details:false,matcher:matcher);if !p.isEmpty {rows[c.id]=p}}
         emit("receiveEPG",["programmes":rows,"status":epg?.states[item.id] ?? "Guida non ancora caricata", "busy":epg?.busy.contains(item.id) ?? false, "diagnostics":EPGService.diagnostics(item,guide:epg?.guides[item.id])])
         if infoVisible {updateInfo()}
     }

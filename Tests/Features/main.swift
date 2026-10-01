@@ -37,3 +37,35 @@ check(EPGService.diagnostics(absentItem,guide:guide,now:now)["matched"] as? Int 
 let secretError=NSError(domain:NSURLErrorDomain,code:NSURLErrorTimedOut,userInfo:[NSLocalizedDescriptionKey:"https://private.example/credential"])
 check(!EPGService.networkMessage(secretError).contains("credential"),"network error privacy")
 print("PASS EPG diagnostics: associations, current/missing programmes, unmatched IDs, error privacy")
+func testChannel(_ id: String?, _ name: String, tvgName: String? = nil) -> Channel {
+    Channel(id: UUID().uuidString, name: name, group: "Test", url: "https://example.org/test", logo: "", headers: [:], tvgID: id, tvgName: tvgName)
+}
+let tennis = Guide(programmes: ["Sky Sport Tennis.it": [pair.0!], "SuperTennis.it": [pair.0!]], names: ["sky sport tennis": ["Sky Sport Tennis.it"], "supertennis hd": ["SuperTennis.it"]])
+let matcher = EPGMatcher(tennis)
+for id in ["skysporttennis.it", "SkySportTennis.it", "Sky.Sport.Tennis.it", "SKY_SPORT-TENNIS.IT"] {
+    let c = testChannel(id, "IT- Sky Sport Tennis H265")
+    check(matcher.match(c).kind == .normalizedID, "ID normalization")
+    check(tennis.schedule(c, now: now, matcher: matcher).0?.title == "Ora", "normalized ID playback schedule")
+}
+check(matcher.match(testChannel("Sky Sport Tennis.it", "different")).kind == .exactID, "exact ID priority")
+check(matcher.match(testChannel("supertennis.it", "IT- Super Tennis FHD")).id == "SuperTennis.it", "SuperTennis ID")
+check(matcher.match(testChannel(nil, "IT- Super Tennis FHD")).kind == .name, "quality/name fallback")
+check(matcher.match(testChannel("unknown", "IT- Sky Sport Tennis HD H265")).kind == .name, "multiple quality suffixes")
+for name in ["IT- Sky Sport Tennis +1 HD", "IT- Sky Sport Tennis +24", "IT- Sky Sport Tennis 2 HD"] {
+    check(matcher.match(testChannel(nil, name)).kind == .missing, "preserve timeshift and numbers")
+}
+check(matcher.match(testChannel("SkySportTennis+1.it", "Tennis +1")).kind == .missing, "preserve plus in IDs")
+var collision = tennis
+collision.names["other"] = ["Sky.Sport.Tennis.it"] // Include IDs with no current programmes.
+let colliding = EPGMatcher(collision)
+check(colliding.match(testChannel("skysporttennis.it", "Sky Sport Tennis")).kind == .ambiguous, "ambiguous ID must not fall through to name")
+check(colliding.match(testChannel("Sky Sport Tennis.it", "anything")).kind == .exactID, "exact wins despite normalized collision")
+collision.names["sky sport tennis hd"] = ["different"]
+check(EPGMatcher(collision).match(testChannel(nil, "IT- Sky Sport Tennis HD")).kind == .ambiguous, "ambiguous cleaned names")
+check(matcher.match(testChannel(nil, "SuperTennis", tvgName: "Sky Sport Tennis")).kind == .ambiguous, "conflicting channel names")
+let cached = try JSONDecoder().decode(Guide.self, from: JSONEncoder().encode(tennis))
+check(cached.channelID(testChannel("skysporttennis.it", "Test")) == "Sky Sport Tennis.it", "cache compatibility")
+let diagnosticChannels = [testChannel("Sky Sport Tennis.it", "Test"), testChannel("skysporttennis.it", "Test"), testChannel(nil, "Super Tennis FHD"), testChannel(nil, "Absent"), testChannel(nil, "SuperTennis", tvgName: "Sky Sport Tennis")]
+let diag = EPGService.diagnostics(Playlist(name: "Matches", catalog: Catalog(raw: "", source: "", base: "", channels: diagnosticChannels)), guide: tennis, now: now)
+for key in ["exactID", "normalizedID", "name", "missing", "ambiguous"] { check(diag[key] as? Int == 1, "diagnostic match method: " + key) }
+print("PASS EPG matching: exact/normalized IDs, names/quality, timeshift, collisions, conflicts, cache, diagnostics")
