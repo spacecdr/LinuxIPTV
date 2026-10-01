@@ -68,6 +68,7 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
     var infoWeb: InfoWebView!
     var infoVisible = false
     var infoTimer: Timer?
+    var infoDeadline = Date.distantPast
     var browseSave: DispatchWorkItem?
     var lastGuideTick = Date.distantPast
     var current: Channel?
@@ -145,7 +146,9 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in
-            guard let self = self, NSApp.keyWindow === self.window, !self.visible else { return e }
+            guard let self = self, NSApp.keyWindow === self.window else { return e }
+            if self.infoVisible && [53,51].contains(e.keyCode) && !e.modifierFlags.contains(.command) { self.hideInfo(); return nil }
+            guard !self.visible else { return e }
             if e.modifierFlags.contains(.command) { return e }
             switch e.keyCode {
             case 53: self.escape()
@@ -209,6 +212,7 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         emit("receiveCatalog",payload);sendEPG()
     }
     func sendState() {
+        if infoVisible { updateInfo() }
         emit("receiveState", ["current": playingPlaylistID == library.selectedID ? current?.id ?? "" : "", "name": current?.name ?? "Nessun canale in riproduzione", "status": status, "active": current != nil, "volume": volume, "muted": muted, "floating": floating, "fullscreen": window.styleMask.contains(.fullScreen)])
     }
     func report(_ message: String) { showMenu(); emit("showError", ["message": message]) }
@@ -221,6 +225,10 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
         case "removePlaylist": removePlaylist()
         case "browse": rememberBrowse(body)
         case "refreshEPG": if let item=selectedPlaylist, !epg.busy.contains(item.id) {epg.refresh(item,force:true)}
+        case "infoBounds":
+            guard message.webView === infoWeb, let x=body["x"] as? Double, let y=body["y"] as? Double, let w=body["width"] as? Double, let h=body["height"] as? Double else {return}
+            infoWeb.interactiveRect = NSRect(x:x,y:infoWeb.isFlipped ? y : infoWeb.bounds.height-y-h,width:w,height:h)
+        case "infoStep": step(body["delta"] as? Int ?? 1)
         case "info": toggleInfo()
         case "escape": escape()
         case "back": if floating { toggleBorderless() } else { showMenu() }
@@ -262,8 +270,9 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMess
     func play(_ channel: Channel) {
         guard player != nil else { report("Motore VLC non disponibile."); return }
         playbackGeneration += 1; let playToken = playbackGeneration; engineReady = false
+        let keepInfo = infoVisible
         playingPlaylistID = library.selectedID ?? "";videoRatio=0;window.contentResizeIncrements = NSSize(width: 1, height: 1);hideInfo()
-        current = channel; playbackStart = Date(); status = "Connessione…"; hideMenu(); sendState()
+        current = channel; playbackStart = Date(); status = "Connessione…"; hideMenu(); sendState(); if keepInfo { toggleInfo() }
         let cache = buffer, volume = self.volume, muted = self.muted
         engine.async {
             libvlc_media_player_stop(self.player)

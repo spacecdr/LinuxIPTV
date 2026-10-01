@@ -2,7 +2,7 @@
 
 **Liste M3U, canali e preferiti. La tua IPTV sul Mac, con il player già incluso.**
 
-[Scarica per Intel e Apple Silicon](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.4) · [Pagina del progetto](https://spacecdr.github.io/MacIPTV/) · [Comandi](#comandi) · [Compilazione e test](DEVELOPMENT.md)
+[Scarica per Intel e Apple Silicon](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.5) · [Pagina del progetto](https://spacecdr.github.io/MacIPTV/) · [Comandi](#comandi) · [Compilazione e test](DEVELOPMENT.md)
 
 ![Catalogo MacIPTV: gruppi, ricerca e canali in griglia](docs/assets/catalogo.png)
 
@@ -12,7 +12,7 @@ MacIPTV è un’applicazione standalone per macOS: carichi una lista M3U da file
 
 ## Download e installazione
 
-1. Scarica **MacIPTV-universal.zip** dalla [release](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.4).
+1. Scarica **MacIPTV-universal.zip** dalla [release](https://github.com/spacecdr/MacIPTV/releases/tag/v1.1.5).
 2. Estrai lo ZIP e trascina **MacIPTV.app** in **Applicazioni**.
 3. Apri l’app e usa **Gestisci lista M3U** per caricare un file o incollare un URL.
 
@@ -151,5 +151,13 @@ Build Universal Intel/Apple Silicon, macOS 13+, firma locale non notarizzata.
 Corretto il crash al ritorno in finestra dopo lo stop del video e successivi passaggi fullscreen/finestra, tramite F o pulsante. Il ripristino del ridimensionamento libero ora usa gli incrementi della finestra anziché impostare un rapporto 0:0, che poteva produrre un’altezza NaN in AppKit. Il rapporto proporzionale durante il video resta attivo.
 
 Aggiunta regressione nativa con due cicli fullscreen/finestra dopo Esc/OSD/stop, controllo delle dimensioni e del ridimensionamento libero.
+
+Build Universal Intel/Apple Silicon, macOS 13+, firma locale non notarizzata.
+
+## 1.1.5 — Catalogo compatto e telecomando nelle info
+
+Lista M3U ed EPG sono pulsanti nella barra superiore e aprono modali. Il selettore della playlist, il nome e il pulsante + sono nel modale Lista; durante la riproduzione resta disponibile il solo selettore.
+
+Il telecomando è esclusivamente nel box informazioni: pausa, stop, cambio canale, muto, volume e buffer. Le info restano aperte quando il mouse è sopra il box; dopo l’uscita riparte il timer di 5 secondi. Esc o Backspace chiudono le info anche con il puntatore sopra. I clic fuori dal box restano disponibili per i gesti del video.
 
 Build Universal Intel/Apple Silicon, macOS 13+, firma locale non notarizzata.

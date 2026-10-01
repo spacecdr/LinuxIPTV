@@ -1,14 +1,22 @@
 import Cocoa
 import WebKit
-final class InfoWebView: WKWebView { override func hitTest(_ point: NSPoint) -> NSView? { nil } }
+final class InfoWebView: WKWebView {
+    var interactiveRect = NSRect.zero
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard interactiveRect.contains(convert(point, from: superview)) else { return nil }
+        return super.hitTest(point)
+    }
+}
 extension App {
     func setupInfo(_ root: NSView) {
-        infoWeb = InfoWebView(frame: root.bounds); infoWeb.autoresizingMask = [.width,.height]; infoWeb.setValue(false, forKey:"drawsBackground")
+        let config = WKWebViewConfiguration(); config.userContentController.add(self, name: "native")
+        infoWeb = InfoWebView(frame: root.bounds, configuration: config); infoWeb.autoresizingMask = [.width,.height]; infoWeb.setValue(false, forKey:"drawsBackground")
         infoWeb.isHidden = true; root.addSubview(infoWeb)
         infoWeb.loadFileURL(Bundle.main.url(forResource:"info",withExtension:"html")!, allowingReadAccessTo:Bundle.main.resourceURL!)
     }
     func hideInfo() {
         infoTimer?.invalidate(); infoVisible = false
+        window?.makeFirstResponder(visible ? web : surface)
         infoWeb.evaluateJavaScript("document.body.classList.remove('shown')",completionHandler:nil)
         DispatchQueue.main.asyncAfter(deadline:.now()+0.25) { if !self.infoVisible { self.infoWeb.isHidden = true } }
     }
@@ -17,7 +25,13 @@ extension App {
         if infoVisible { hideInfo(); return }
         infoVisible = true; infoWeb.isHidden = false; updateInfo()
         infoWeb.evaluateJavaScript("requestAnimationFrame(()=>document.body.classList.add('shown'))",completionHandler:nil)
-        infoTimer?.invalidate(); infoTimer = Timer.scheduledTimer(withTimeInterval:5,repeats:false) { [weak self] _ in self?.hideInfo() }
+        infoDeadline = Date().addingTimeInterval(5)
+        infoTimer?.invalidate(); infoTimer = Timer.scheduledTimer(withTimeInterval:0.25,repeats:true) { [weak self] _ in
+            guard let self = self else { return }
+            let point = self.infoWeb.convert(self.window.convertPoint(fromScreen: NSEvent.mouseLocation), from:nil)
+            if self.infoWeb.interactiveRect.contains(point) { self.infoDeadline = Date().addingTimeInterval(5) }
+            else if Date() >= self.infoDeadline { self.hideInfo() }
+        }
     }
     func schedulePayload(_ channel: Channel, playlistID: String, details: Bool, matcher: EPGMatcher? = nil) -> [String:Any] {
         guard let guide = epg?.guides[playlistID] else { return [:] }
@@ -44,7 +58,7 @@ extension App {
         var resolution = w>0 && h>0 ? "\(w)×\(h)" : "Risoluzione in rilevamento…"
         if let label=labels[h] {resolution += " · \(label)"}
         var data=schedulePayload(c,playlistID:playingPlaylistID,details:true)
-        data["name"]=c.name;data["logo"]=c.logo;data["resolution"]=resolution
+        data["volume"]=volume;data["muted"]=muted;data["buffer"]=buffer;data["name"]=c.name;data["logo"]=c.logo;data["resolution"]=resolution
         if let json=try? JSONSerialization.data(withJSONObject:data),let text=String(data:json,encoding:.utf8) {infoWeb.evaluateJavaScript("renderInfo(\(text))",completionHandler:nil)}
     }
 }
