@@ -15,7 +15,7 @@ Non sono incluse playlist, credenziali, abbonamenti o canali. Importa un file M3
 Scarica il pacchetto `.deb` dalla [release Linux](https://github.com/spacecdr/LinuxIPTV/releases/latest), quindi:
 
 ```sh
-sudo apt install ./linuxiptv_1.2.0+linux1_all.deb
+sudo apt install ./linuxiptv_1.2.0+linux2_all.deb
 ```
 
 Apri **LinuxIPTV** dal menu applicazioni. `apt` installa anche le dipendenze: il player è dentro la finestra dell’app e usa LibVLC del sistema. Il pacchetto non incorpora una copia dei codec.
@@ -79,7 +79,7 @@ Per trasferire una lista dal Mac, esportala da MacIPTV e apri il file in LinuxIP
 
 Test automatici su parser/persistenza/EPG, test del catalogo originale nel browser con 6.442 canali e test nativo GTK/LibVLC con video sintetico: riproduzione da file e HTTP locale, avanzamento video, frame decodificati, menu sovrapposto, telecomando, fullscreen, borderless, ritorno, stop e regressione fullscreen. Le immagini di prova usano soltanto dati sintetici.
 
-La verifica nativa non certifica l’audio ascoltato, ogni provider IPTV, le prestazioni 4K o tutte le combinazioni di driver/window manager. Il port usa la composizione dei frame LibVLC in GTK per mantenere gli overlay trasparenti; l’utilizzo CPU può differire dalla versione Mac. Il comportamento “sempre in primo piano” dipende dal gestore finestre. Non è previsto supporto DRM.
+La regressione audio è verificata anche misurando il segnale PCM su un’uscita virtuale PulseAudio/PipeWire. La verifica nativa non certifica l’audio ascoltato, ogni provider IPTV, le prestazioni 4K o tutte le combinazioni di driver/window manager. Il port usa la composizione dei frame LibVLC in GTK per mantenere gli overlay trasparenti; l’utilizzo CPU può differire dalla versione Mac. Il comportamento “sempre in primo piano” dipende dal gestore finestre. Non è previsto supporto DRM.
 
 Build, test e architettura: [DEVELOPMENT.md](DEVELOPMENT.md). Documentazione storica Mac: [docs/MacIPTV.md](docs/MacIPTV.md).
 

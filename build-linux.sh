@@ -2,7 +2,7 @@
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 cd "$ROOT"
-VERSION=1.2.0+linux1
+VERSION=1.2.0+linux2
 STAGE=$(mktemp -d "$ROOT/build-linux.XXXXXX")
 trap 'rm -rf "$STAGE"' EXIT HUP INT TERM
 mkdir -p dist "$STAGE/usr" "$STAGE/DEBIAN"

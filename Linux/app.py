@@ -84,7 +84,7 @@ class App:
         self.info.set_no_show_all(True)
         self.window.show_all()
         self.redraw_pending = False
-        self.player = Player(self.queue_video_draw, self.muted)
+        self.player = Player(self.queue_video_draw, silent=args.smoke_test)
         self.web.load_uri((ROOT / 'Resources/index.html').as_uri())
         self.info.load_uri((ROOT / 'Resources/info.html').as_uri())
         self.info.hide()
@@ -694,6 +694,7 @@ class App:
                 self.stop()
                 self.report('Tempo di connessione scaduto.')
             elif state == 3:
+                self.player.sync_audio(self.volume, self.muted)
                 self.apply_ratio()
             if self.visible:
                 self.send_state()

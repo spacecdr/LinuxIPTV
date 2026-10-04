@@ -2,6 +2,7 @@
 import ctypes as C
 import ctypes.util
 import threading
+import time
 import cairo
 from concurrent.futures import ThreadPoolExecutor
 
@@ -20,11 +21,13 @@ class Track(C.Structure):
 
 
 class Player:
-    def __init__(self, redraw, muted=False):
+    def __init__(self, redraw, silent=False):
         self.lib = C.CDLL(ctypes.util.find_library('vlc') or 'libvlc.so.5')
         pointer, integer, string = C.c_void_p, C.c_int, C.c_char_p
         signatures = {
             'new': (pointer, [integer, C.POINTER(string)]), 'release': (None, [pointer]),
+            'set_app_id': (None, [pointer, string, string, string]),
+            'set_user_agent': (None, [pointer, string, string]),
             'media_player_get_media': (pointer, [pointer]),
             'media_tracks_get': (C.c_uint, [pointer, C.POINTER(C.POINTER(C.POINTER(Track)))]),
             'media_tracks_release': (None, [C.POINTER(C.POINTER(Track)), C.c_uint]),
@@ -35,6 +38,8 @@ class Player:
             'media_player_play': (integer, [pointer]), 'media_player_stop': (None, [pointer]),
             'media_player_pause': (None, [pointer]), 'media_player_get_state': (integer, [pointer]),
             'media_player_get_time': (C.c_int64, [pointer]), 'media_player_has_vout': (C.c_uint, [pointer]),
+            'audio_get_volume': (integer, [pointer]), 'audio_get_mute': (integer, [pointer]),
+            'audio_get_track': (integer, [pointer]),
             'audio_set_volume': (integer, [pointer, integer]), 'audio_set_mute': (None, [pointer, integer]),
             'video_set_key_input': (None, [pointer, C.c_uint]), 'video_set_mouse_input': (None, [pointer, C.c_uint]),
             'video_get_size': (integer, [pointer, C.c_uint, C.POINTER(C.c_uint), C.POINTER(C.c_uint)]),
@@ -45,9 +50,13 @@ class Player:
             function.restype, function.argtypes = restype, argtypes
             setattr(self, name, function)
         args = [b'--ignore-config', b'--no-video-title-show', b'--no-osd', b'--no-media-library', b'--quiet', b'--no-snapshot-preview', b'--vout=vmem']
+        if silent:
+            args.append(b'--aout=dummy')
         self.instance = self.new(len(args), (string * len(args))(*args))
         if not self.instance:
             raise RuntimeError('Motore VLC non disponibile.')
+        self.set_app_id(self.instance, b'io.github.spacecdr.LinuxIPTV', b'1.2.0-linux.2', b'linuxiptv')
+        self.set_user_agent(self.instance, b'LinuxIPTV', b'LinuxIPTV/1.2.0')
         self.handle = self.media_player_new(self.instance)
         if not self.handle:
             self.release(self.instance)
@@ -62,6 +71,9 @@ class Player:
         self.video_set_mouse_input(self.handle, 0)
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='libvlc')
         self.closed = False
+        self.audio_pending = False
+        self.audio_sync_future = None
+        self.audio_stable = 0
 
     def setup_video(self):
         # Decode with LibVLC into a Cairo-compatible buffer. GTK then composites
@@ -135,9 +147,37 @@ class Player:
             self.media_release(media)
             self.audio_set_volume(self.handle, volume)
             self.audio_set_mute(self.handle, int(muted))
+            self.audio_pending = True
+            self.audio_stable = 0
+            self.audio_deadline = time.monotonic() + 45
             if self.media_player_play(self.handle) < 0:
                 raise RuntimeError('Impossibile avviare il canale.')
         return self.submit(start)
+
+    def sync_audio(self, volume, muted):
+        """Apply UI audio after PulseAudio/PipeWire restores its stream state.
+
+        Pre-play setters alone are overwritten asynchronously by the server.
+        Bootstrap only: stop enforcing once stable so later mixer changes work.
+        """
+        if not self.audio_pending or (self.audio_sync_future and not self.audio_sync_future.done()):
+            return
+        def synchronize():
+            if time.monotonic() > self.audio_deadline:
+                self.audio_pending = False
+                return
+            if self.media_player_get_state(self.handle) != 3 or self.audio_get_track(self.handle) < 0:
+                return
+            actual = self.audio_get_volume(self.handle), self.audio_get_mute(self.handle)
+            if actual != (volume, int(muted)):
+                self.audio_set_volume(self.handle, volume)
+                self.audio_set_mute(self.handle, int(muted))
+                self.audio_stable = 0
+            else:
+                self.audio_stable += 1
+                if self.audio_stable >= 3:
+                    self.audio_pending = False
+        self.audio_sync_future = self.submit(synchronize)
 
     def display_ratio(self):
         width, height = self.size()

@@ -13,3 +13,7 @@ Verifiche eseguite su Ubuntu 24.04 x86_64, sessione Wayland/XWayland:
 Nessuna playlist personale usata. Screenshot Linux soltanto con catalogo, guida e video sintetici. Audio mantenuto muto nelle verifiche; ascolto, provider reali, altre distribuzioni/architetture e prestazioni 4K non certificati.
 
 Gli appunti Mac precedenti sono archiviati in `docs/HANDOFF-MacIPTV.md`; non rappresentano verifiche del port Linux.
+
+## Correzione audio — Linux 1.2.0+linux2
+
+Riprodotto volume effettivo 0 e muto 1, nonostante la UI indicasse audio attivo: il mixer ripristinava lo stato degli smoke test dopo i setter iniziali. Aggiunti bootstrap audio dopo l’avvio della traccia, identificatore LinuxIPTV separato e output dummy per gli smoke test. Test PCM su sink virtuale: segnale presente in riproduzione e dopo cambio canale, zero con muto/volume zero; nessun flusso del mixer creato dai test silenziosi. Nessuna playlist personale utilizzata nelle verifiche.

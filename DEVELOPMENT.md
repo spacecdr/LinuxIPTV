@@ -38,7 +38,20 @@ Non usare dati personali negli screenshot o nei commit. Non dichiarare verificat
 
 ```sh
 ./build-linux.sh
-sudo apt install ./dist/linuxiptv_1.2.0+linux1_all.deb
+sudo apt install ./dist/linuxiptv_1.2.0+linux2_all.deb
 ```
 
 Output: `.deb`, archivio sorgenti `.tar.xz` e `SHA256SUMS` in `dist/`, esclusa da Git. Il pacchetto contiene Python e risorse; le librerie e i codec vengono risolti da `apt`, senza scaricamenti opachi al primo avvio. Lo script richiede `dpkg-deb`, `tar`, `xz`, `git`, Python 3 e gli strumenti standard di shell.
+
+## Regressione audio PulseAudio / PipeWire
+
+Le impostazioni applicate prima di `media_player_play` possono essere sovrascritte dal ripristino asincrono del mixer. Il player riconcilia volume e muto durante l’avvio della traccia audio, poi smette di imporli. LinuxIPTV ha un identificatore applicazione proprio; gli smoke test usano `--aout=dummy` e non toccano il mixer.
+
+Test audio reale su un sink virtuale temporaneo, senza registrare microfono o audio del desktop:
+
+```sh
+sudo apt install pulseaudio-utils ffmpeg
+python3 Tests/linux/audio_integration.py build/linux-fixture.ts
+```
+
+Il test riproduce un ripristino a volume zero/muto, misura campioni PCM, controlla muto/ripristino/volume zero/cambio canale e verifica che lo smoke test non crei flussi audio di sistema. Il sink temporaneo viene rimosso al termine.
