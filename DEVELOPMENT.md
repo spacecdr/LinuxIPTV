@@ -1,83 +1,44 @@
-# Sviluppo di MacIPTV
+# Sviluppo LinuxIPTV
 
-## Build
+Il port vive in `Linux/` e riusa senza modifiche `Resources/index.html`, `info.html` e `panorama.svg`. Il nome LinuxIPTV viene applicato dal contenitore Linux a caricamento completato. I sorgenti Swift e `build.sh` originali rimangono disponibili per il Mac; istruzioni storiche in [docs/DEVELOPMENT-MacIPTV.md](docs/DEVELOPMENT-MacIPTV.md).
 
-Richiede macOS, Command Line Tools di Apple, Swift e un SDK in grado di compilare le architetture arm64 e x86_64.
+- `core.py`: M3U, SHA-256 compatibile con MacIPTV, archivio atomico, XMLTV/gzip e matching.
+- `epg.py`: aggiornamenti in background, cache per playlist/sorgente e scarto dei risultati obsoleti.
+- `player.py`: binding ctypes con firme esplicite LibVLC 3, operazioni serializzate fuori dal thread UI e frame Cairo per la composizione degli overlay.
+- `app.py`: GTK/WebKit, bridge JavaScript originale, finestre, tastiera, file chooser, sessione, info e telecomando.
+- `smoke.py`: verifica nativa isolata; dati temporanei e audio muto.
+- `install.py`: installazione per utente e staging Debian.
+
+Il backend GTK è X11, disponibile anche in una sessione Wayland attraverso XWayland. Le pagine WebKit sono locali, con CSP originale e navigazione bloccata verso altre pagine; le playlist non possono eseguire HTML. Loghi remoti HTTP/HTTPS restano consentiti. Non stampare URL privati nei log. I worker di rete non modificano GTK e le risposte obsolete sono scartate.
+
+## Verifiche
 
 ```sh
-git clone https://github.com/spacecdr/MacIPTV.git
-cd MacIPTV
-./build.sh
+python3 -m unittest discover -s Tests/linux -v
+npm install --no-save --package-lock=false playwright@1.51.1
+CHROME_PATH=/usr/bin/google-chrome node Tests/browser.cjs
+CHROME_PATH=/usr/bin/google-chrome node Tests/EPGFeedback.cjs
 ```
 
-L’output è `dist/MacIPTV.app`. Alla prima esecuzione lo script scarica VLC 3.0.24 Universal dal sito ufficiale e ne copia runtime, codec e risorse. `vendor/`, `build/` e `dist/` sono esclusi dal repository. Lo script crea entrambi i binari con deployment macOS 13, li unisce con `lipo` e firma il bundle ad hoc.
+Per Chromium distribuito da Playwright: `npx playwright install chromium` e ometti `CHROME_PATH`. La versione di test 1.51.1 funziona anche con Node 18; non è una dipendenza dell’app.
 
-Puoi scegliere l’SDK con `IPTV_SDK=/percorso/MacOSX.sdk ./build.sh`. La build iniziale usa Swift 6.4 in modalità Swift 5 e SDK macOS 26.5. Se presente, lo script preferisce questo SDK; altrimenti usa quello selezionato da `xcrun`. La directory `vendor/mount` può restare montata dopo il primo download: al termine si può smontare con `hdiutil detach "$PWD/vendor/mount"`.
-
-Il toolchain macOS 27 usato per la prima release non contiene tutte le librerie di back-deployment Intel per macOS 12: non abbassare il deployment senza verificare il toolchain. Con deployment 13 il linker può segnalare l’assenza della slice Intel dell’archivio opzionale swiftCompatibilityPacks; il progetto non usa parameter packs e il collegamento termina senza simboli irrisolti.
-
-## Struttura
-
-- `Sources/Catalog.swift`: parser M3U, identificatori e persistenza.
-- `Sources/main.swift`: AppKit, bridge WKWebView, player e modalità finestra.
-- `Sources/VLCBridge.h`: dichiarazioni C delle API LibVLC utilizzate.
-- `Resources/index.html`: catalogo e navigazione da tastiera.
-- `Tests/`: parser, test del catalogo e generatore dell’icona.
-- `scripts/`: generazione delle immagini pubbliche e verifiche del sito.
-- `docs/`: sito GitHub Pages e immagini dimostrative.
-
-Le operazioni bloccanti di LibVLC sono serializzate fuori dal main thread. L’interfaccia resta nello stesso NSWindow del video. I dati usano la directory `Application Support/IPTVMac`, conservata anche dopo il cambio del nome pubblico dell’app.
-
-## Test
-
-Parser e persistenza:
+Test GTK/LibVLC, da una sessione grafica:
 
 ```sh
 mkdir -p build
-xcrun swiftc -swift-version 5 Sources/Catalog.swift Tests/main.swift -o build/catalog-tests
-./build/catalog-tests
+ffmpeg -f lavfi -i testsrc2=size=640x360:rate=25 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 60 -c:v mpeg2video -q:v 4 -c:a mp2 build/linux-fixture.ts
+./linuxiptv --smoke-test --fixture build/linux-fixture.ts --screenshot-dir build/screenshots
 ```
 
-Catalogo nel browser:
+Il test esce con codice diverso da zero in caso di errore o timeout. Importa una playlist locale sintetica tramite il percorso reale dell’app, carica XMLTV, interagisce con il bridge HTML e verifica il motore e le finestre. I test core verificano anche download HTTP locale, redirect, limiti, errori, ID, isolamento, persistenza e matching EPG.
+
+Non usare dati personali negli screenshot o nei commit. Non dichiarare verificati ascolto audio, gesti fisici o hardware non effettivamente provati.
+
+## Pacchetti
 
 ```sh
-npm install --no-save --package-lock=false playwright
-npx playwright install chromium
-node Tests/browser.cjs
+./build-linux.sh
+sudo apt install ./dist/linuxiptv_1.2.0+linux1_all.deb
 ```
 
-`PLAYWRIGHT_MODULE` permette di usare un’installazione esistente; `CHROME_PATH` sceglie un eseguibile Chrome/Chromium. Il test usa 6.442 canali sintetici. Nessun server IPTV o dato dell’utente è necessario.
-
-Player nativo, con un video locale oppure un URL di test autorizzato:
-
-```sh
-"dist/MacIPTV.app/Contents/MacOS/MacIPTV" --smoke-test --fixture /percorso/video.ts
-```
-
-Lo smoke test usa una directory temporanea, azzera il volume, verifica stato e avanzamento video, catalogo, fullscreen e finestra flottante; poi chiude l’app. `--windowed` permette un avvio normale in finestra. I test non devono usare playlist personali nei file pubblici.
-
-## Verifiche della prima release
-
-Parser con 10.000 canali; catalogo con 6.442 canali, 159 gruppi, filtri, stelle, tastiera, pagine, viste e layout da 420 a 1280 px. Riproduzione nativa Apple Silicon da file, HTTP locale e HTTPS, con output video presente e tempo avanzante. Transizioni fullscreen/floating e chiusura completate. Firma del bundle verificata con `codesign`; binario Universal verificato con `lipo`.
-
-Il test Intel su hardware fisico non è stato effettuato. Le prove native verificano lo stato del motore e della finestra; non costituiscono una verifica acustica o una cattura dell’intero desktop. Le immagini pubbliche sono render del catalogo reale con dati sintetici; sfondi video e schema flottante sono illustrativi.
-
-## Rilasci
-
-Lo ZIP dell’app va allegato alle GitHub Releases, non aggiunto alla cronologia Git. Pubblicare checksum SHA-256, note, licenze e accesso ai sorgenti delle dipendenze. La release 1.0.0 non è notarizzata: una distribuzione notarizzata richiede un account Apple Developer e la firma del titolare.
-
-## Versione 1.1.0
-
-Nuovi moduli Library (multi-playlist e migrazione), EPG (XMLTV/cache), Playlists (gestione), Windows (geometria/sessione), Info (overlay separato) e VideoSupport.c (SAR/gzip). `Tests/Features/main.swift` copre scoperta guida, ID, timezone, programmi, migrazione e isolamento preferiti.
-
-In questa sessione l’ambiente limita rete e avvio GUI: il browser Chromium termina all’avvio. Non presentare i test grafici della 1.0 come verifica completa della 1.1. La pubblicazione GitHub richiede il ripristino dell’accesso di rete.
-
-## Regressione fullscreen dopo stop (1.1.4)
-
-Con un video sintetico locale di almeno 20 secondi:
-
-```sh
-dist/MacIPTV.app/Contents/MacOS/MacIPTV --smoke-test --fullscreen-regression --fixture /percorso/video.ts
-```
-
-Dopo il normale smoke test, ferma il video con la sequenza Esc/OSD/stop e ripete due cicli fullscreen/finestra. Verifica geometria finita e ridimensionamento libero. Per rimuovere il vincolo di proporzione, impostare `contentResizeIncrements` a `(1, 1)`, mai assegnare esplicitamente `contentAspectRatio = .zero`: al ritorno dal fullscreen AppKit può calcolare un’altezza NaN.
+Output: `.deb`, archivio sorgenti `.tar.xz` e `SHA256SUMS` in `dist/`, esclusa da Git. Il pacchetto contiene Python e risorse; le librerie e i codec vengono risolti da `apt`, senza scaricamenti opachi al primo avvio. Lo script richiede `dpkg-deb`, `tar`, `xz`, `git`, Python 3 e gli strumenti standard di shell.

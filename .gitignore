@@ -11,3 +11,10 @@
 /Tests/*.png
 /Tests/*.log
 .DS_Store
+
+# Linux builds and private Python state
+__pycache__/
+*.pyc
+/build-linux.*/
+*.m3u
+*.m3u8

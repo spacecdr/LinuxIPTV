@@ -1,0 +1,31 @@
+# MacIPTV 1.1 — stato del lavoro
+
+Implementate localmente playlist multiple, migrazione, XMLTV/gzip/cache, info I con dissolvenza, geometria/sessione finestre, B solo in playback, Esc ritorno, trascinamento e doppio clic, aspect ratio video. Build Universal completata. Test Features passati. Sintassi JS verificata. Browser Chromium e app nativa abortiscono nell’ambiente sandbox: verifica grafica non completata. GitHub non raggiungibile in questa sessione.
+
+ZIP e checksum: release/v1.1.0/. Note: release/notes-v1.1.0.md. Script di pubblicazione preparato: scripts/publish-1.1.sh. Pubblica come prerelease finché le interazioni native non sono verificate. Non dichiarare pubblicata la versione senza controllare l’esito GitHub.
+
+L’utente ha chiesto di limitare il consumo di token al 4% della quota rimasta; nessun contatore di quota disponibile. Limitare attività e comunicazioni al necessario. Nessun nuovo URL di prova privato è stato inserito nei sorgenti.
+
+## 2 ottobre — feedback EPG 1.1.1
+
+La 1.1.0 è stata pubblicata dall’utente con lo script e l’utente conferma le interazioni native; EPG ancora assente. Aggiunti stato visibile, fasi/errori, conteggi, esempi ID e retry manuale. Non diagnosticata la lista privata: non affermare che gli ID corrispondano o che la sorgente sia valida. Rete GitHub ancora bloccata nella sessione; pubblicazione 1.1.1 predisposta con scripts/publish-1.1.1.sh. ZIP in release/v1.1.1/.
+
+## 2 ottobre — associazione automatica EPG 1.1.2
+
+La 1.1.1 è stata pubblicata dopo il ripristino della rete. La 1.1.2 aggiunge EPGMatcher: ID esatto, ID normalizzato, nomi ripuliti; collisioni bloccate, +1/+24 e numeri preservati. Indice riutilizzato per l’invio del catalogo, compatibile con cache esistenti. Nessuna modifica delle playlist o della sorgente scelta dall’utente. Test Features e feedback EPG passati; catalogo browser su Chrome passato. Build Universal e firma verificate. Nessun test su Intel fisico o nuova verifica audio/video nativa. Release predisposta in release/v1.1.2, script scripts/publish-1.1.2.sh.
+
+## 2 ottobre — comandi e catalogo 1.1.3
+
+Clic singolo differito dall’intervallo doppio clic per le info; trascinamento con soglia 4 punti e performDrag sull’evento mouseDown originale, resize borderless preservato. Esc video → OSD → stop, Backspace invariato (azione back separata). Telecomando nascosto senza playback. Elenco compatto con EPG laterale senza URL. Screenshot dimostrativi rigenerati. Browser/feedback/sito passati, build Universal e firma verificate. Smoke nativo Apple Silicon con video sintetico: playback avanzante 640×360, fullscreen/borderless, azione info e due Esc verificati. Il test aziona il callback delle info, non simula fisicamente clic/drag/doppio clic. Nessun test Intel fisico. Release 1.1.3 predisposta con ZIP/checksum e script publish-1.1.3.sh; precedenti 1.1.1 e 1.1.2 pubblicate come prerelease.
+
+## 2 ottobre — crash fullscreen 1.1.4
+
+Log utente 00:39: AppKit NSInternalInconsistencyException in setupWindowForAfterFullScreenExit, frame altezza NaN. Causa: assegnazione esplicita contentAspectRatio=.zero per liberare il resize in play/stop/applyRatio. Sostituita con contentResizeIncrements=(1,1); rapporto video accettato solo finito e positivo. Build Universal e firma passate. Regressione nativa Apple Silicon con video sintetico passata: playback, info/Esc/stop, due ulteriori cicli fullscreen/finestra e dimensioni finite. Nuovo flag --fullscreen-regression documentato. Pubblicazione predisposta in scripts/publish-1.1.4.sh, ZIP/checksum in release/v1.1.4. Nessun test Intel fisico.
+
+## 2 ottobre — layout/telecomando 1.1.5
+
+Lista ed EPG in dialog modali aperti dai pulsanti header, playlistBar nel modale Lista. Gestione nascosta in playback, selettore conservato. Telecomando trasferito da index.html a info.html, bridge WKWebView abilitato solo sul rettangolo del box comunicato da ResizeObserver. Timer nativo controlla il puntatore ogni 250ms: permanenza sospende la chiusura, uscita riavvia 5s. Monitor tastiera chiude le info con Esc/Backspace prima delle altre azioni, anche con focus sui controlli. Cambio canale dal telecomando conserva le info. Test browser modali/keyboard/layout/telecomando e feedback passati; build Universal/firma passate. Screenshot sintetici aggiornati. Release 1.1.5 predisposta; smoke nativo e regressione fullscreen passati su Apple Silicon. Hover e gesti fisici non verificati manualmente; nessun test Intel fisico.
+
+## 2 ottobre — 1.2.0 stabile
+
+Info con font/spazi em scalati sul viewport; OSD zoom tra .55 e 1 sotto 800×560 con dimensioni compensate. Sfondo panorama.svg incluso nel bundle e usato solo senza playback. README/sito consolidati sulle funzionalità attuali, immagini aggiornate e link releases/latest/download. Publish 1.2.0 usa --latest, non prerelease. Build Universal/firma e test browser (scaling, modali, EPG, controlli)/sito completati. Nessun nuovo intervento nativo rispetto alla 1.1.5; limiti Intel fisico e notarizzazione invariati.

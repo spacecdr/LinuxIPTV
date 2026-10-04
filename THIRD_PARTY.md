@@ -15,3 +15,14 @@ MacIPTV non usa il plugin dell’interfaccia completa di VLC, che dipende da Spa
 AppKit, WebKit, Foundation e CryptoKit sono framework di sistema Apple, non copiati nel pacchetto. Playwright è usato soltanto negli strumenti di test, non nell’app.
 
 Icona e sfondi dimostrativi sono disegni originali del progetto. I canali nelle immagini sono inventati e gli URL usano `example.org`. Nessun logo televisivo, playlist privata o contenuto del canale di prova viene pubblicato. MacIPTV non è un prodotto ufficiale VideoLAN e non implica un’affiliazione con VideoLAN o Apple.
+
+## Port Linux
+
+LinuxIPTV usa le copie di sistema di Python 3, PyGObject, Pycairo/Cairo, GTK 3,
+WebKitGTK 4.1 e LibVLC 3 con i plugin della distribuzione. Il pacchetto Debian
+non incorpora questi binari: le dipendenze, gli aggiornamenti e le rispettive
+licenze/sorgenti sono forniti dai repository della distribuzione.
+
+Riferimenti: https://www.python.org/ · https://pygobject.gnome.org/ ·
+https://www.cairographics.org/ · https://www.gtk.org/ ·
+https://webkitgtk.org/ · https://www.videolan.org/vlc/

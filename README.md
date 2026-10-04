@@ -1,126 +1,86 @@
-# MacIPTV
+# LinuxIPTV
 
-**Liste M3U, canali e preferiti. La tua IPTV sul Mac, con il player già incluso.**
+**Liste M3U, canali e preferiti. La tua IPTV su Linux, con player integrato.**
 
-[Scarica per Intel e Apple Silicon](https://github.com/spacecdr/MacIPTV/releases/latest) · [Pagina del progetto](https://spacecdr.github.io/MacIPTV/) · [Comandi](#comandi) · [Compilazione e test](DEVELOPMENT.md)
+Port Linux di [MacIPTV](https://github.com/spacecdr/MacIPTV) 1.2.0: riutilizza i file originali del catalogo e delle info, mantenendo layout, gruppi, ricerca, griglia/elenco, preferiti, guida EPG e navigazione da tastiera. Il contenitore macOS è sostituito da GTK 3, WebKitGTK e LibVLC.
 
-![Catalogo MacIPTV: gruppi, ricerca e canali in griglia](docs/assets/catalogo.png)
+![Catalogo LinuxIPTV](docs/assets/linux/catalogo-linux.png)
 
-*Interfaccia reale del catalogo, renderizzata con canali dimostrativi. Nessuna playlist o credenziale è inclusa.*
+*Interfaccia reale su Linux, con catalogo e guida sintetici.*
 
-MacIPTV è un’applicazione standalone per macOS: carichi una lista M3U da file o URL, scegli il canale e lo guardi direttamente sul Mac. Al primo avvio parte a schermo intero, poi ricorda la sessione; si usa anche da tastiera e può diventare una piccola finestra video senza bordi, sempre in primo piano.
+Non sono incluse playlist, credenziali, abbonamenti o canali. Importa un file M3U/M3U8 o il tuo URL HTTP/HTTPS.
 
-## Download e installazione
+## Installazione Ubuntu / Debian
 
-1. Scarica **MacIPTV-universal.zip** dalla [release](https://github.com/spacecdr/MacIPTV/releases/latest).
-2. Estrai lo ZIP e trascina **MacIPTV.app** in **Applicazioni**.
-3. Apri l’app e usa **Gestisci lista M3U** per caricare un file o incollare un URL.
+Scarica il pacchetto `.deb` dalla [release Linux](https://github.com/spacecdr/LinuxIPTV/releases/latest), quindi:
 
-L’archivio contiene entrambe le architetture: **Intel x86_64 e Apple Silicon arm64**. Non occorre installare VLC, Python, Homebrew o un browser. Il player utilizza il motore VLC incorporato.
+```sh
+sudo apt install ./linuxiptv_1.2.0+linux1_all.deb
+```
 
-L’app ha una firma locale ad hoc e **non è notarizzata Apple**. Se macOS ne impedisce l’apertura, dopo il primo tentativo verifica **Impostazioni di Sistema → Privacy e sicurezza → Apri comunque**. Non occorre disattivare Gatekeeper. I checksum della release permettono di verificare l’integrità del download.
+Apri **LinuxIPTV** dal menu applicazioni. `apt` installa anche le dipendenze: il player è dentro la finestra dell’app e usa LibVLC del sistema. Il pacchetto non incorpora una copia dei codec.
 
-## Funzionalità
+Verificato su **Ubuntu 24.04 x86_64**, in sessione Wayland tramite XWayland. Sono necessari Python 3.10+, GTK 3, WebKitGTK 4.1 e LibVLC 3. Per altre distribuzioni installa gli equivalenti dei pacchetti qui sotto; non sono ancora state testate su hardware reale.
 
-| Funzione | Cosa puoi fare |
+## Avvio dai sorgenti
+
+```sh
+git clone https://github.com/spacecdr/LinuxIPTV.git
+cd LinuxIPTV
+sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-webkit2-4.1 libvlc5 vlc-plugin-base vlc-plugin-video-output xwayland
+./linuxiptv
+```
+
+Per installare una copia nell’account corrente, con icona nel menu e comando in `~/.local/bin`:
+
+```sh
+python3 Linux/install.py
+```
+
+Non servono pip, un browser esterno o un server web. L’installazione da sorgenti usa i componenti della distribuzione. Per disinstallare il pacchetto: `sudo apt remove linuxiptv`. La disinstallazione conserva le playlist personali.
+
+## Funzioni e comandi
+
+- Playlist multiple da file e URL; aggiornamento, modifica, rimozione ed esportazione. Gli errori di importazione conservano la lista precedente. Limite M3U: 20 MB.
+- Gruppi, ricerca, pagine da 60 canali, griglia/elenco e preferiti separati per lista; filtri e selezione ricordati.
+- EPG XMLTV e gzip: sorgenti dalla playlist o URL manuale, aggiornamento in background, cache, associazione per ID/nome con controllo delle ambiguità e diagnostica.
+- Riproduzione integrata, pausa, volume, muto, buffer, cambio canale nei filtri correnti e apertura opzionale in VLC esterno.
+- Catalogo trasparente sopra il video, info con programma attuale/successivo e telecomando. Il mouse sul box info sospende la chiusura automatica.
+- Fullscreen, finestra e modalità senza bordi sempre in primo piano; trascinamento e ridimensionamento dall’angolo inferiore destro.
+
+| Tasto | Azione |
 | --- | --- |
-| Liste M3U | Importare file e URL HTTP/HTTPS, aggiornare le liste remote ed esportare la lista salvata |
-| Gruppi e ricerca | Cercare gruppi e canali, vedere i conteggi e consultare pagine da 60 canali |
-| Griglia o elenco | Cambiare vista; nell’elenco trovi il programma EPG, gli orari e la progressione |
-| Preferiti | Aggiungere o rimuovere un canale con la stella; ritrovarlo ai prossimi avvii |
-| Player integrato | Riprodurre con LibVLC, regolare volume, pausa, muto e buffer da 1 a 10 secondi |
-| Menu sul video | Premere Invio per riaprire il catalogo semitrasparente, conservando filtri e selezione |
-| Fullscreen e finestra | Passare da schermo intero a finestra con F |
-| Solo video | Premere B per una finestra senza bordi, ridimensionabile e sempre in primo piano |
-| Cambio canale | Usare CH+/CH− all’interno del gruppo, della ricerca o dei preferiti correnti |
-| VLC esterno | Aprire il canale selezionato in un’installazione separata di VLC, se disponibile |
+| Frecce nel catalogo | Naviga tra gruppi e canali |
+| Invio | Riproduce / riapre il catalogo |
+| Esc | Chiude prima le info o un dialogo; nel video apre il catalogo, un altro Esc ferma |
+| Backspace | Torna ai gruppi, poi al video; durante il video apre il catalogo |
+| F | Fullscreen / finestra |
+| B | Solo video senza bordi / modalità precedente |
+| I | Info e telecomando |
+| Spazio, M, S | Pausa, muto, stop |
+| ↑ / ↓ nel video | Canale successivo / precedente |
+| ← / → nel video | Volume |
+| P, / | Preferito / cerca nel catalogo |
+| Ctrl+O, Ctrl+L, Ctrl+Q | Apri lista, catalogo, esci |
 
-### I canali che vuoi ritrovare
+Il primo avvio è a schermo intero; in seguito viene ripristinata la modalità della sessione. `./linuxiptv --windowed` forza la finestra. `--playlist /percorso/lista.m3u` importa un file all’avvio.
 
-![Preferiti in MacIPTV](docs/assets/preferiti.png)
+![Menu sopra il video](docs/assets/linux/menu-video-linux.png)
 
-La stella è separata dal pulsante di riproduzione. I preferiti vengono salvati sul Mac e possono essere filtrati con la ricerca.
-
-### Programmi EPG, elenco compatto
-
-![Vista elenco di MacIPTV](docs/assets/elenco.png)
-
-La vista elenco affianca nome e gruppo al programma EPG, con orari e progressione, in righe compatte senza URL.
-
-### Il catalogo resta sopra il video
-
-![Anteprima del catalogo semitrasparente](docs/assets/menu-video.png)
-
-*Anteprima illustrativa: l’interfaccia reale è mostrata su uno sfondo grafico dimostrativo, non su una trasmissione TV.*
-
-Durante la riproduzione, **Invio** riapre lo stesso catalogo senza fermare il player. Seleziona un altro canale oppure torna al video. **B** attiva la finestra flottante; trascina il video per spostarla e l’angolo inferiore destro per ridimensionarla. Premendo di nuovo B ripristini la finestra precedente. Il clic singolo apre le info con il telecomando; il mouse sul box ne sospende la chiusura.
-
-## Comandi
-
-| Tasto | Nel catalogo | Durante il video |
-| --- | --- | --- |
-| ↑ ↓ ← → | Navigazione; → dai gruppi entra nei canali | ↑/↓ cambia canale; ←/→ regola il volume |
-| Invio | Attiva il controllo o riproduce il canale | Riapre il menu semitrasparente |
-| Esc | Nell’OSD interrompe la riproduzione | Apre l’OSD |
-| Backspace | Dai canali torna ai gruppi, poi al video | Riapre il catalogo |
-| F | Schermo intero / finestra | Schermo intero / finestra |
-| B | Solo durante la riproduzione | Borderless / modalità precedente |
-| I | Info sul canale in riproduzione | Info con dissolvenza e chiusura dopo 5 secondi |
-| Spazio | Pausa / riprendi | Pausa / riprendi |
-| M | Audio / muto | Audio / muto |
-| S | Stop | Stop |
-| P | Preferito del canale selezionato | — |
-| / | Cerca un canale | — |
-| Cmd+O | Apri lista | Apri lista |
-| Cmd+L | Catalogo | Catalogo |
-| Cmd+Q | Esci | Esci |
-
-Nei campi di testo, frecce e Backspace mantengono il normale comportamento di modifica. Esc chiude prima un modale o le info; nell’OSD interrompe il video. Tab e Shift+Tab raggiungono gli altri controlli. Nella modalità senza bordi, doppio clic sul video alterna fullscreen e modalità precedente.
-
-## Requisiti
-
-- **macOS 13 Ventura o successivo**, su Mac Intel o Apple Silicon.
-- Una lista M3U con canali accessibili e formati supportati da VLC.
-- Connessione al server della lista e dei canali. La lista può essere un file locale.
-- VLC installato separatamente **solo** se vuoi usare il player esterno.
-
-Limite della lista: **20 MB**. Un’importazione invalida conserva la lista precedente. Le liste importate da file vanno ricaricate per aggiornarle. Il comportamento di un canale dipende dal provider; non sono inclusi canali, abbonamenti, registrazione o supporto DRM.
-
-**Stato delle verifiche della versione 1.0:** riproduzione nativa e transizioni finestra/fullscreen/flottante provate su Apple Silicon. La build e i componenti necessari contengono le architetture Intel e ARM; la prova su un Mac Intel fisico resta da effettuare. Il livello flottante è soggetto alle finestre riservate di macOS. Usando VLC esterno, finestra e comandi sono gestiti da VLC.
-
-## Tecnologie
-
-| Componente | Tecnologia |
-| --- | --- |
-| Applicazione e finestre | Swift, AppKit / Cocoa |
-| Catalogo e menu | WKWebView locale, HTML, CSS e JavaScript |
-| Video e audio | LibVLC 3.0.24 con runtime e codec incorporati |
-| Importazione remota | Foundation URLSession |
-| Dati locali | JSON, scrittura atomica, permessi privati |
-| Identificatori dei canali | SHA-256 con CryptoKit |
-| Build Universal | swiftc, lipo e codesign |
-| Sito del progetto | HTML/CSS statici su GitHub Pages |
-
-L’app non avvia un server web e non richiede servizi cloud propri. La WKWebView è integrata in macOS: l’interfaccia non dipende da Chrome o Safari installati come applicazioni separate.
+*Menu reale sopra un video di test generato, non una trasmissione TV.*
 
 ## Dati locali
 
-Lista e preferiti sono in `~/Library/Application Support/IPTVMac/`. Gli URL possono contenere credenziali: non condividere i file salvati o screenshot con indirizzi personali. La navigazione usa i server indicati dalla lista per playlist, stream e loghi. I metadati sono trattati come testo, non come codice HTML.
+I dati sono salvati in `${XDG_DATA_HOME:-~/.local/share}/linuxiptv-data/`, separati dall’installazione e dall’app Mac. Directory con permessi `0700`, file privati con permessi `0600`, salvataggio atomico. `--data-dir /percorso` permette un archivio distinto.
 
-## Sviluppo e licenze
+Per trasferire una lista dal Mac, esportala da MacIPTV e apri il file in LinuxIPTV, oppure inserisci lo stesso URL. Le copie salvate da MacIPTV si trovano in `~/Library/Application Support/IPTVMac/`; non fanno parte del repository. Non pubblicare file contenenti URL personali.
 
-Consulta [DEVELOPMENT.md](DEVELOPMENT.md) per build, test e struttura del progetto. Il codice dell’app è distribuito con licenza **GPL-3.0-or-later**. VLC e le sue dipendenze conservano le rispettive licenze: dettagli, sorgenti e riferimenti in [THIRD_PARTY.md](THIRD_PARTY.md).
+## Stato delle verifiche
 
-## 1.2.0 — Stabile
+Test automatici su parser/persistenza/EPG, test del catalogo originale nel browser con 6.442 canali e test nativo GTK/LibVLC con video sintetico: riproduzione da file e HTTP locale, avanzamento video, frame decodificati, menu sovrapposto, telecomando, fullscreen, borderless, ritorno, stop e regressione fullscreen. Le immagini di prova usano soltanto dati sintetici.
 
-- Info proporzionate alle dimensioni della finestra e OSD ridotto automaticamente nelle finestre piccole.
-- Sfondo illustrato con montagne nel catalogo quando non è in riproduzione un canale.
-- Barra compatta: modali Lista M3U ed EPG, playlist multiple e preferiti separati.
-- EPG XMLTV/gzip in background, cache, normalizzazione ID/nomi con controllo ambiguità e diagnostica.
-- Telecomando nelle info, mantenute aperte col mouse sopra; Esc/Backspace le chiudono.
-- Elenco compatto con programma, orari e progressione; dettagli nelle info.
-- Clic per info, trascinamento finestra, doppio clic fullscreen/ritorno, B borderless durante il video.
-- Esc apre OSD e poi ferma il video; Backspace conserva la navigazione. Sessione e proporzioni video ricordate.
-- Correzione del crash fullscreen dopo stop. Download del sito e README collegati alla release stabile più recente.
+La verifica nativa non certifica l’audio ascoltato, ogni provider IPTV, le prestazioni 4K o tutte le combinazioni di driver/window manager. Il port usa la composizione dei frame LibVLC in GTK per mantenere gli overlay trasparenti; l’utilizzo CPU può differire dalla versione Mac. Il comportamento “sempre in primo piano” dipende dal gestore finestre. Non è previsto supporto DRM.
 
-Universal Intel/Apple Silicon, macOS 13+, VLC incluso. Firma ad hoc, non notarizzata Apple. Intel fisico non verificato.
+Build, test e architettura: [DEVELOPMENT.md](DEVELOPMENT.md). Documentazione storica Mac: [docs/MacIPTV.md](docs/MacIPTV.md).
+
+Licenza **GPL-3.0-or-later**. Il repository conserva la cronologia di MacIPTV; il port Linux non modifica il repository originale. Dipendenze e licenze: [THIRD_PARTY.md](THIRD_PARTY.md).
